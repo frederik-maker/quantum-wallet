@@ -55,6 +55,8 @@ export function WalletDashboard() {
 
   const explorerBase = network === "mainnet-beta"
     ? "https://explorer.solana.com"
+    : network === "localnet"
+    ? "https://explorer.solana.com/?cluster=devnet"
     : `https://explorer.solana.com/?cluster=${network}`;
 
   return (
@@ -77,12 +79,13 @@ export function WalletDashboard() {
             <QuantumShield status={loading ? "rotating" : activeVaults.length > 0 ? "protected" : "vulnerable"} />
             <select
               value={network}
-              onChange={(e) => setNetwork(e.target.value as "devnet" | "mainnet-beta" | "testnet")}
+              onChange={(e) => setNetwork(e.target.value as "devnet" | "mainnet-beta" | "testnet" | "localnet")}
               className="bg-transparent text-xs font-mono text-zinc-600 focus:outline-none cursor-pointer"
             >
               <option value="devnet" className="bg-zinc-900">devnet</option>
               <option value="testnet" className="bg-zinc-900">testnet</option>
               <option value="mainnet-beta" className="bg-zinc-900">mainnet</option>
+              <option value="localnet" className="bg-zinc-900">local</option>
             </select>
           </div>
         </div>
@@ -150,7 +153,7 @@ export function WalletDashboard() {
         </div>
 
         {/* Devnet Quick Start */}
-        {network === "devnet" && (totalBalance === 0 || activeVaults.length === 0) && (
+        {(network === "devnet" || network === "localnet") && (totalBalance === 0 || activeVaults.length === 0) && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}

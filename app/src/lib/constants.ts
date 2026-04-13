@@ -27,6 +27,7 @@ export const RPC_ENDPOINTS: Record<string, string> = {
   "devnet": "https://api.devnet.solana.com",
   "testnet": "https://api.testnet.solana.com",
   "mainnet-beta": "https://api.mainnet-beta.solana.com",
+  "localnet": "http://localhost:8899",
 };
 
 // Umbra program IDs

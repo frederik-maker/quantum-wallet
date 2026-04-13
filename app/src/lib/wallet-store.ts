@@ -52,7 +52,7 @@ interface WalletState {
 
   // Solana connection
   rpcUrl: string;
-  network: "devnet" | "mainnet-beta" | "testnet";
+  network: "devnet" | "mainnet-beta" | "testnet" | "localnet";
 
   // Fee payer (Ed25519 keypair for paying tx fees)
   feePayerSecret: number[] | null;
@@ -70,7 +70,7 @@ interface WalletState {
 
   // Actions
   initializeWallet: (name: string) => Promise<void>;
-  setNetwork: (network: "devnet" | "mainnet-beta" | "testnet") => void;
+  setNetwork: (network: "devnet" | "mainnet-beta" | "testnet" | "localnet") => void;
   refreshBalances: () => Promise<void>;
   sendSol: (recipient: string, amountLamports: number) => Promise<string>;
   getReceiveAddress: () => string | null;
@@ -110,6 +110,8 @@ export const useWalletStore = create<WalletState>()(
             ? "https://api.mainnet-beta.solana.com"
             : network === "testnet"
             ? "https://api.testnet.solana.com"
+            : network === "localnet"
+            ? "http://localhost:8899"
             : "https://api.devnet.solana.com";
         set({ network, rpcUrl });
       },
