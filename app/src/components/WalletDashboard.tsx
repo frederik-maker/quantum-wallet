@@ -150,7 +150,7 @@ export function WalletDashboard() {
         </div>
 
         {/* Devnet Quick Start */}
-        {network === "devnet" && totalBalance === 0 && (
+        {network === "devnet" && (totalBalance === 0 || activeVaults.length === 0) && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -162,7 +162,7 @@ export function WalletDashboard() {
               <button
                 onClick={async () => {
                   setAirdropping(true);
-                  try { await airdrop(); } catch (e) { console.error(e); }
+                  try { await airdrop(); } catch { /* error set in store */ }
                   setAirdropping(false);
                 }}
                 disabled={airdropping}
@@ -173,7 +173,7 @@ export function WalletDashboard() {
               <button
                 onClick={async () => {
                   setFunding(true);
-                  try { await fundVault(); } catch (e) { console.error(e); }
+                  try { await fundVault(); } catch { /* error set in store */ }
                   setFunding(false);
                 }}
                 disabled={funding}

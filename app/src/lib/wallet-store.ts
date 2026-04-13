@@ -462,17 +462,29 @@ export const useWalletStore = create<WalletState>()(
         const state = get();
         if (!state.feePayerSecret) throw new Error("Wallet not initialized");
 
+        set({ error: null });
         const connection = getConnection(state.rpcUrl);
         const feePayer = Keypair.fromSecretKey(
           Uint8Array.from(state.feePayerSecret)
         );
 
-        const sig = await connection.requestAirdrop(
-          feePayer.publicKey,
-          2 * 1_000_000_000 // 2 SOL
-        );
-        await connection.confirmTransaction(sig, "confirmed");
-        return sig;
+        try {
+          const sig = await connection.requestAirdrop(
+            feePayer.publicKey,
+            2 * 1_000_000_000 // 2 SOL
+          );
+          await connection.confirmTransaction(sig, "confirmed");
+          await get().refreshBalances();
+          return sig;
+        } catch (err: unknown) {
+          const msg = err instanceof Error ? err.message : String(err);
+          if (msg.includes("429") || msg.includes("rate limit") || msg.includes("Too Many")) {
+            set({ error: "Devnet faucet rate limited. Visit faucet.solana.com to airdrop manually to: " + feePayer.publicKey.toBase58() });
+          } else {
+            set({ error: "Airdrop failed: " + msg });
+          }
+          throw err;
+        }
       },
 
       fundVault: async () => {
