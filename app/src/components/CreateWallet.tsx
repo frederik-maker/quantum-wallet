@@ -45,9 +45,7 @@ export function CreateWallet() {
             <div className="inline-flex relative">
               <div className="w-16 h-16 rounded-2xl bg-gradient-to-b from-[#00e5a0]/15 to-[#00e5a0]/5 border border-[#00e5a0]/20 flex items-center justify-center pulse-ring shadow-[0_4px_24px_rgba(0,229,160,0.1),inset_0_1px_0_rgba(255,255,255,0.05)]">
                 <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#00e5a0" strokeWidth="1.5">
-                  <path d="M12 2L3 7v10l9 5 9-5V7l-9-5z" />
-                  <path d="M12 22V12" />
-                  <path d="M3 7l9 5 9-5" />
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
                 </svg>
               </div>
             </div>
@@ -56,7 +54,7 @@ export function CreateWallet() {
           {/* Title */}
           <motion.h1
             variants={fadeUp}
-            className="text-5xl sm:text-7xl font-bold mb-4"
+            className="text-5xl sm:text-7xl font-bold mb-5"
             style={{ letterSpacing: "-0.03em" }}
           >
             <span className="shimmer">Quantum Vault</span>
@@ -64,39 +62,39 @@ export function CreateWallet() {
 
           <motion.p
             variants={fadeUp}
-            className="text-lg sm:text-xl text-zinc-500 max-w-md mx-auto mb-14 leading-relaxed"
+            className="text-lg sm:text-xl text-zinc-400 max-w-lg mx-auto mb-14 leading-relaxed"
           >
-            The first wallet that survives quantum computers.
-            Built on Solana. Ready today.
+            The Solana wallet built to survive quantum computers.
+            Your keys rotate after every transaction &mdash; nothing is ever exposed.
           </motion.p>
 
-          {/* Stats */}
+          {/* Value props - human language */}
           <motion.div
             variants={fadeUp}
-            className="flex items-center justify-center gap-8 sm:gap-16 mb-14"
+            className="flex items-stretch justify-center gap-4 sm:gap-6 mb-14 max-w-lg mx-auto"
           >
             {[
-              { value: "256x", label: "hash iterations per key" },
-              { value: "896B", label: "quantum-safe signatures" },
-              { value: "0", label: "keys exposed after tx" },
-            ].map((stat, i) => (
+              { icon: "M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z", title: "Quantum-proof", desc: "Keys that can't be cracked, even by future computers" },
+              { icon: "M4 4v16h16M4 14l4-4 4 4 8-8", title: "Auto-rotating", desc: "Fresh keys after every send, nothing reused" },
+              { icon: "M12 2L3 7v10l9 5 9-5V7l-9-5z", title: "On-chain", desc: "Built natively on Solana, not a wrapper" },
+            ].map((prop) => (
               <motion.div
-                key={stat.label}
-                className="text-center"
+                key={prop.title}
+                className="flex-1 text-left p-4 rounded-xl border border-white/[0.04] bg-white/[0.01]"
                 variants={{
                   initial: { opacity: 0, y: 16 },
                   animate: {
                     opacity: 1,
                     y: 0,
-                    transition: {
-                      duration: 0.5,
-                      ease: [0.25, 0.46, 0.45, 0.94] as const,
-                    },
+                    transition: { duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] as const },
                   },
                 }}
               >
-                <div className="text-2xl sm:text-3xl font-mono font-light text-white tracking-tight">{stat.value}</div>
-                <div className="text-[11px] text-zinc-600 mt-1.5 max-w-[100px] leading-snug">{stat.label}</div>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#00e5a0" strokeWidth="1.5" className="mb-3 opacity-60">
+                  <path d={prop.icon} />
+                </svg>
+                <div className="text-sm font-medium text-zinc-200 mb-1">{prop.title}</div>
+                <div className="text-[11px] text-zinc-600 leading-snug">{prop.desc}</div>
               </motion.div>
             ))}
           </motion.div>
@@ -108,9 +106,9 @@ export function CreateWallet() {
               whileTap={{ scale: 0.97 }}
               transition={{ type: "spring", stiffness: 400, damping: 25 }}
               onClick={() => setStep("create")}
-              className="btn-primary group relative px-8 py-4 rounded-full bg-[#00e5a0] text-black font-semibold text-base"
+              className="btn-primary group relative px-10 py-4 rounded-full bg-[#00e5a0] text-black font-semibold text-base"
             >
-              Get Started
+              Create your wallet
               <span className="inline-block ml-2 transition-transform duration-200 group-hover:translate-x-1">&rarr;</span>
             </motion.button>
           </motion.div>
@@ -119,7 +117,7 @@ export function CreateWallet() {
             variants={fadeUp}
             className="text-[11px] text-zinc-700 mt-8 tracking-wide"
           >
-            No servers. No tracking. Keys never leave your device.
+            100% local. No servers, no tracking, no accounts.
           </motion.p>
         </motion.div>
       ) : (
@@ -134,9 +132,9 @@ export function CreateWallet() {
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.1 }}
             onClick={() => setStep("hero")}
-            className="text-sm text-zinc-600 hover:text-zinc-400 mb-8 transition-colors duration-200 flex items-center gap-1.5 group"
+            className="text-sm text-zinc-600 hover:text-zinc-400 mb-8 transition-colors flex items-center gap-1.5 group"
           >
-            <span className="transition-transform duration-200 group-hover:-translate-x-0.5">&larr;</span>
+            <span className="transition-transform group-hover:-translate-x-0.5">&larr;</span>
             <span>Back</span>
           </motion.button>
 
@@ -146,9 +144,9 @@ export function CreateWallet() {
             transition={{ delay: 0.15, type: "spring", stiffness: 300, damping: 30 }}
           >
             <h2 className="text-3xl font-bold text-white mb-2" style={{ letterSpacing: "-0.02em" }}>
-              Name your vault
+              Name your wallet
             </h2>
-            <p className="text-zinc-500 mb-8 text-sm">This is stored locally on your device.</p>
+            <p className="text-zinc-500 mb-8 text-sm">Pick any name. Everything stays on your device.</p>
           </motion.div>
 
           <motion.div
@@ -162,7 +160,7 @@ export function CreateWallet() {
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="e.g. Main Wallet"
+                placeholder="e.g. My Wallet"
                 autoFocus
                 className="w-full bg-transparent border-b border-zinc-800 px-0 py-4 text-xl text-white placeholder:text-zinc-700 focus:outline-none transition-all duration-300"
                 onKeyDown={(e) => e.key === "Enter" && handleCreate()}
@@ -180,10 +178,10 @@ export function CreateWallet() {
               {loading ? (
                 <span className="inline-flex items-center gap-2">
                   <span className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" />
-                  Generating keys...
+                  Setting up...
                 </span>
               ) : (
-                "Create Quantum Vault"
+                "Create wallet"
               )}
             </motion.button>
           </motion.div>
