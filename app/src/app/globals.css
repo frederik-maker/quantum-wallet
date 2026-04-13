@@ -1,16 +1,16 @@
 @import "tailwindcss";
 
 :root {
-  --background: #050507;
+  --background: #080810;
   --foreground: #f0f0f5;
   --accent: #00e5a0;
   --accent-dim: #00e5a020;
   --cyan: #0ea5e9;
   --violet: #8b5cf6;
-  --surface-1: #09090e;
-  --surface-2: #0d0d14;
-  --border-subtle: rgba(255, 255, 255, 0.04);
-  --border-medium: rgba(255, 255, 255, 0.07);
+  --surface-1: #0b0b14;
+  --surface-2: #0f0f1a;
+  --border-subtle: rgba(255, 255, 255, 0.06);
+  --border-medium: rgba(255, 255, 255, 0.10);
 }
 
 @theme inline {
@@ -37,7 +37,7 @@ body {
   content: "";
   position: fixed;
   inset: 0;
-  background-image: radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.025) 1px, transparent 0);
+  background-image: radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.04) 1px, transparent 0);
   background-size: 32px 32px;
   pointer-events: none;
   z-index: 0;
@@ -45,23 +45,14 @@ body {
   -webkit-mask-image: radial-gradient(ellipse 60% 50% at 50% 0%, black 20%, transparent 70%);
 }
 
-/* ── Fine noise overlay ── */
-.noise::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.018'/%3E%3C/svg%3E");
-  background-repeat: repeat;
-  pointer-events: none;
-  z-index: 50;
-}
+/* noise overlay removed — was invisible and caused z-index issues */
 
 /* ── Glow effects with depth ── */
 .glow-green {
   box-shadow:
-    0 0 60px rgba(0, 229, 160, 0.06),
-    0 0 120px rgba(0, 229, 160, 0.03),
-    inset 0 1px 0 rgba(255, 255, 255, 0.03);
+    0 0 60px rgba(0, 229, 160, 0.12),
+    0 0 120px rgba(0, 229, 160, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 .glow-dot {
@@ -123,16 +114,18 @@ body {
   position: relative;
   background: linear-gradient(
     165deg,
-    rgba(0, 229, 160, 0.04) 0%,
-    rgba(9, 9, 14, 0.95) 30%,
-    var(--surface-1) 60%,
-    rgba(14, 165, 233, 0.02) 100%
+    rgba(0, 229, 160, 0.10) 0%,
+    rgba(0, 229, 160, 0.04) 15%,
+    var(--surface-1) 40%,
+    var(--surface-1) 70%,
+    rgba(14, 165, 233, 0.05) 100%
   );
   border: 1px solid var(--border-medium);
   box-shadow:
     0 4px 6px rgba(0, 0, 0, 0.4),
     0 12px 40px rgba(0, 0, 0, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    0 0 60px rgba(0, 229, 160, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.07);
 }
 
 .balance-card::before {
@@ -143,11 +136,12 @@ body {
   padding: 1px;
   background: linear-gradient(
     165deg,
-    rgba(0, 229, 160, 0.15) 0%,
-    rgba(255, 255, 255, 0.06) 20%,
-    rgba(255, 255, 255, 0.02) 50%,
+    rgba(0, 229, 160, 0.30) 0%,
+    rgba(0, 229, 160, 0.12) 15%,
+    rgba(255, 255, 255, 0.08) 30%,
+    rgba(255, 255, 255, 0.03) 50%,
     transparent 70%,
-    rgba(14, 165, 233, 0.06) 100%
+    rgba(14, 165, 233, 0.10) 100%
   );
   mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   mask-composite: exclude;
@@ -164,7 +158,7 @@ body {
   height: 100%;
   background: radial-gradient(
     ellipse 80% 50% at 20% 0%,
-    rgba(0, 229, 160, 0.03) 0%,
+    rgba(0, 229, 160, 0.08) 0%,
     transparent 60%
   );
   border-radius: inherit;
@@ -253,12 +247,12 @@ body {
 /* ── Action Buttons ── */
 .action-btn {
   position: relative;
-  background: linear-gradient(180deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.01) 100%);
-  border: 1px solid rgba(255,255,255,0.06);
+  background: linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 100%);
+  border: 1px solid rgba(255,255,255,0.10);
   box-shadow:
     0 1px 3px rgba(0, 0, 0, 0.3),
     0 4px 12px rgba(0, 0, 0, 0.15),
-    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    inset 0 1px 0 rgba(255, 255, 255, 0.07);
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -280,13 +274,13 @@ body {
 }
 
 .action-btn:hover {
-  background: linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%);
-  border-color: rgba(0, 229, 160, 0.12);
+  background: linear-gradient(180deg, rgba(255,255,255,0.14) 0%, rgba(255,255,255,0.06) 100%);
+  border-color: rgba(0, 229, 160, 0.22);
   box-shadow:
     0 2px 8px rgba(0, 0, 0, 0.3),
     0 8px 24px rgba(0, 0, 0, 0.15),
-    0 0 20px rgba(0, 229, 160, 0.03),
-    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    0 0 30px rgba(0, 229, 160, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
 }
 
 /* ── Button hover glow ── */
@@ -356,11 +350,11 @@ body {
   inset: 0;
   background: conic-gradient(
     from var(--qs-angle),
-    rgba(0, 229, 160, 0.04) 0%,
-    rgba(14, 165, 233, 0.03) 25%,
-    rgba(0, 229, 160, 0.02) 50%,
-    rgba(139, 92, 246, 0.03) 75%,
-    rgba(0, 229, 160, 0.04) 100%
+    rgba(0, 229, 160, 0.10) 0%,
+    rgba(14, 165, 233, 0.08) 25%,
+    rgba(0, 229, 160, 0.05) 50%,
+    rgba(139, 92, 246, 0.08) 75%,
+    rgba(0, 229, 160, 0.10) 100%
   );
   animation: rotate-qs 12s linear infinite;
   pointer-events: none;
@@ -380,13 +374,13 @@ body {
   position: absolute;
   inset: 0;
   background-image:
-    radial-gradient(circle at 50% 50%, rgba(0, 229, 160, 0.03) 0%, transparent 50%),
+    radial-gradient(circle at 50% 50%, rgba(0, 229, 160, 0.06) 0%, transparent 50%),
     repeating-linear-gradient(
       0deg,
       transparent,
       transparent 24px,
-      rgba(255, 255, 255, 0.01) 24px,
-      rgba(255, 255, 255, 0.01) 25px
+      rgba(255, 255, 255, 0.03) 24px,
+      rgba(255, 255, 255, 0.03) 25px
     );
   pointer-events: none;
   border-radius: inherit;
@@ -461,7 +455,7 @@ input:focus {
 
 /* ── Select styling ── */
 select option {
-  background: #0d0d14;
+  background: #0f0f1a;
 }
 
 /* ── Mesh gradient background ── */
@@ -502,9 +496,9 @@ select option {
 
 /* ── Vault status section ── */
 .vault-section {
-  border: 1px solid rgba(255,255,255,0.04);
-  background: linear-gradient(180deg, rgba(255,255,255,0.015) 0%, rgba(255,255,255,0.005) 100%);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(180deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.015) 100%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
 }
 
 /* ── Animated orb (for hero) ── */

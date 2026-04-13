@@ -28,9 +28,9 @@ export function CreateWallet() {
     <div className="min-h-screen flex flex-col items-center justify-center p-6 relative noise dot-grid">
       {/* Background orbs */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/4 -left-32 w-96 h-96 rounded-full bg-[#00e5a0]/[0.025] blur-[120px]" />
-        <div className="absolute bottom-1/4 -right-32 w-96 h-96 rounded-full bg-[#0ea5e9]/[0.02] blur-[120px]" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-[#8b5cf6]/[0.015] blur-[140px]" />
+        <div className="absolute top-1/4 -left-32 w-96 h-96 rounded-full bg-[#00e5a0]/[0.05] blur-[120px]" />
+        <div className="absolute bottom-1/4 -right-32 w-96 h-96 rounded-full bg-[#0ea5e9]/[0.04] blur-[120px]" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-[#8b5cf6]/[0.03] blur-[140px]" />
       </div>
 
       {step === "hero" ? (
@@ -43,8 +43,8 @@ export function CreateWallet() {
           {/* Logo mark */}
           <motion.div variants={fadeUp} className="mb-8">
             <div className="inline-flex relative">
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-b from-[#00e5a0]/15 to-[#00e5a0]/5 border border-[#00e5a0]/20 flex items-center justify-center pulse-ring shadow-[0_4px_24px_rgba(0,229,160,0.1),inset_0_1px_0_rgba(255,255,255,0.05)]">
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#00e5a0" strokeWidth="1.5">
+              <div className="w-20 h-20 rounded-2xl bg-gradient-to-b from-[#00e5a0]/25 to-[#00e5a0]/8 border border-[#00e5a0]/30 flex items-center justify-center pulse-ring shadow-[0_4px_24px_rgba(0,229,160,0.2),0_0_60px_rgba(0,229,160,0.1),inset_0_1px_0_rgba(255,255,255,0.1)]">
+                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#00e5a0" strokeWidth="1.5">
                   <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
                 </svg>
               </div>
@@ -80,7 +80,8 @@ export function CreateWallet() {
             ].map((prop) => (
               <motion.div
                 key={prop.title}
-                className="flex-1 text-left p-4 rounded-xl border border-white/[0.04] bg-white/[0.01]"
+                className="flex-1 text-left p-4 rounded-xl border border-white/[0.10] bg-white/[0.04]"
+                style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.06)" }}
                 variants={{
                   initial: { opacity: 0, y: 16 },
                   animate: {
@@ -90,11 +91,11 @@ export function CreateWallet() {
                   },
                 }}
               >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#00e5a0" strokeWidth="1.5" className="mb-3 opacity-60">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#00e5a0" strokeWidth="1.5" className="mb-3 opacity-90">
                   <path d={prop.icon} />
                 </svg>
                 <div className="text-sm font-medium text-zinc-200 mb-1">{prop.title}</div>
-                <div className="text-[11px] text-zinc-600 leading-snug">{prop.desc}</div>
+                <div className="text-[11px] text-zinc-500 leading-snug">{prop.desc}</div>
               </motion.div>
             ))}
           </motion.div>
@@ -106,7 +107,7 @@ export function CreateWallet() {
               whileTap={{ scale: 0.97 }}
               transition={{ type: "spring", stiffness: 400, damping: 25 }}
               onClick={() => setStep("create")}
-              className="btn-primary group relative px-10 py-4 rounded-full bg-[#00e5a0] text-black font-semibold text-base"
+              className="btn-primary group relative px-14 py-5 rounded-full bg-[#00e5a0] text-black font-bold text-lg shadow-[0_0_30px_rgba(0,229,160,0.3),0_0_60px_rgba(0,229,160,0.1)]"
             >
               Create your wallet
               <span className="inline-block ml-2 transition-transform duration-200 group-hover:translate-x-1">&rarr;</span>

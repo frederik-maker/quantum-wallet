@@ -83,13 +83,13 @@ export function WalletDashboard() {
     <div className="min-h-screen noise dot-grid">
       {/* Background glow */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute w-[600px] h-[600px] rounded-full bg-[#00e5a0]/[0.02] -top-48 left-1/4 blur-[120px] hero-orb" />
-        <div className="absolute w-[500px] h-[500px] rounded-full bg-[#0ea5e9]/[0.012] top-1/3 -right-32 blur-[120px]" style={{ animationDelay: "-7s" }} />
-        <div className="absolute w-[400px] h-[400px] rounded-full bg-[#8b5cf6]/[0.008] bottom-1/4 left-[16%] blur-[120px]" style={{ animationDelay: "-13s" }} />
+        <div className="absolute w-[600px] h-[600px] rounded-full bg-[#00e5a0]/[0.04] -top-48 left-1/4 blur-[120px] hero-orb" />
+        <div className="absolute w-[500px] h-[500px] rounded-full bg-[#0ea5e9]/[0.025] top-1/3 -right-32 blur-[120px]" style={{ animationDelay: "-7s" }} />
+        <div className="absolute w-[400px] h-[400px] rounded-full bg-[#8b5cf6]/[0.02] bottom-1/4 left-[16%] blur-[120px]" style={{ animationDelay: "-13s" }} />
       </div>
 
       {/* Header */}
-      <header className="sticky top-0 z-40 backdrop-blur-2xl bg-[#050507]/80 border-b header-border">
+      <header className="sticky top-0 z-40 backdrop-blur-2xl bg-[#080810]/80 border-b header-border">
         <div className="max-w-xl mx-auto px-5 h-14 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-7 h-7 rounded-lg bg-gradient-to-b from-[#00e5a0] to-[#00c98a] flex items-center justify-center shadow-[0_2px_8px_rgba(0,229,160,0.25),inset_0_1px_0_rgba(255,255,255,0.2)]">
@@ -141,9 +141,9 @@ export function WalletDashboard() {
               {/* Status pill */}
               <div className="mb-5">
                 {isSetUp ? (
-                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#00e5a0]/[0.06] border border-[#00e5a0]/10">
-                    <div className="w-1.5 h-1.5 rounded-full bg-[#00e5a0]" />
-                    <span className="text-[11px] font-medium text-[#00e5a0]/80">Quantum-protected</span>
+                  <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#00e5a0]/[0.10] border border-[#00e5a0]/20" style={{ boxShadow: "0 0 16px rgba(0, 229, 160, 0.12), 0 0 40px rgba(0, 229, 160, 0.06)" }}>
+                    <div className="w-1.5 h-1.5 rounded-full bg-[#00e5a0] glow-dot" />
+                    <span className="text-[11px] font-semibold text-[#00e5a0]">Quantum-protected</span>
                   </div>
                 ) : (
                   <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/[0.03] border border-white/[0.06]">
@@ -283,12 +283,14 @@ export function WalletDashboard() {
         {/* ── How it works (shown after vault is created) ── */}
         {isSetUp && (
           <motion.div variants={fadeUp} className="mb-8">
-            <div className="rounded-2xl border border-white/[0.04] bg-white/[0.01] p-5">
+            <div className="rounded-2xl border border-[#00e5a0]/10 bg-[#00e5a0]/[0.04] p-5" style={{ boxShadow: "inset 0 1px 0 rgba(0, 229, 160, 0.08)" }}>
               <div className="flex items-center gap-3 mb-3">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00e5a0" strokeWidth="1.5" className="shrink-0">
-                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                </svg>
-                <p className="text-sm font-medium text-zinc-300">Why this wallet is different</p>
+                <div className="w-7 h-7 rounded-lg bg-[#00e5a0]/[0.12] border border-[#00e5a0]/15 flex items-center justify-center shrink-0">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#00e5a0" strokeWidth="1.5">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                  </svg>
+                </div>
+                <p className="text-sm font-medium text-zinc-200">Why this wallet is different</p>
               </div>
               <p className="text-xs text-zinc-500 leading-relaxed">
                 Every time you send SOL, your keys automatically rotate to a brand-new set.
@@ -402,22 +404,22 @@ export function WalletDashboard() {
         </motion.div>
 
         {/* ── Divider ── */}
-        <div className="h-px bg-gradient-to-r from-transparent via-white/[0.06] to-transparent my-6" />
+        <div className="h-px bg-gradient-to-r from-transparent via-white/[0.10] to-transparent my-6" />
 
         {/* ── Transaction History ── */}
         <motion.div variants={fadeUp}>
           <p className="text-[11px] font-mono text-zinc-600 uppercase tracking-[0.15em] mb-4">Recent activity</p>
           {recentHistory.length === 0 ? (
-            <div className="py-16 text-center empty-state-pattern rounded-2xl border border-white/[0.03]">
+            <div className="py-16 text-center empty-state-pattern rounded-2xl border border-white/[0.08] bg-white/[0.02]">
               <div className="relative z-10">
-                <div className="mx-auto mb-4 w-11 h-11 rounded-xl border border-white/[0.06] bg-white/[0.02] flex items-center justify-center">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-zinc-700">
+                <div className="mx-auto mb-4 w-12 h-12 rounded-xl border border-white/[0.10] bg-white/[0.05] flex items-center justify-center" style={{ boxShadow: "0 4px 12px rgba(0,0,0,0.2)" }}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-zinc-500">
                     <circle cx="12" cy="12" r="10" />
                     <path d="M12 6v6l4 2" />
                   </svg>
                 </div>
-                <p className="text-zinc-500 text-sm font-medium">Nothing here yet</p>
-                <p className="text-zinc-700 text-xs mt-1">Your transactions will show up here</p>
+                <p className="text-zinc-400 text-sm font-medium">Nothing here yet</p>
+                <p className="text-zinc-600 text-xs mt-1">Your transactions will show up here</p>
               </div>
             </div>
           ) : (
@@ -425,7 +427,7 @@ export function WalletDashboard() {
               variants={stagger}
               initial="initial"
               animate="animate"
-              className="space-y-1"
+              className="space-y-2"
             >
               {recentHistory.map((tx) => (
                 <motion.div
@@ -486,15 +488,15 @@ function ActionButton({ label, sublabel, icon, onClick }: {
       whileHover={{ scale: 1.03, y: -2 }}
       whileTap={{ scale: 0.97 }}
       transition={{ type: "spring", stiffness: 500, damping: 30 }}
-      className="action-btn rounded-xl py-4 flex flex-col items-center gap-1.5 text-zinc-400 hover:text-white group"
+      className="action-btn rounded-xl py-5 flex flex-col items-center gap-2 text-zinc-400 hover:text-white group"
     >
-      <div className="w-9 h-9 rounded-lg bg-white/[0.03] border border-white/[0.04] flex items-center justify-center mb-0.5 group-hover:bg-white/[0.06] group-hover:border-white/[0.08] transition-all">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-zinc-500 group-hover:text-white transition-colors">
+      <div className="w-10 h-10 rounded-full bg-[#00e5a0]/[0.10] border border-[#00e5a0]/15 flex items-center justify-center mb-0.5 group-hover:bg-[#00e5a0]/[0.18] group-hover:border-[#00e5a0]/25 transition-all" style={{ boxShadow: "0 0 12px rgba(0, 229, 160, 0.06)" }}>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00e5a0" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="group-hover:brightness-125 transition-all">
           {icon}
         </svg>
       </div>
-      <span className="text-xs font-medium">{label}</span>
-      <span className="text-[10px] text-zinc-700 group-hover:text-zinc-500 transition-colors">{sublabel}</span>
+      <span className="text-[13px] font-semibold">{label}</span>
+      <span className="text-[10px] text-zinc-600 group-hover:text-zinc-400 transition-colors">{sublabel}</span>
     </motion.button>
   );
 }
@@ -510,13 +512,13 @@ function TxRow({ tx, explorerBase }: { tx: TxHistoryEntry; explorerBase: string 
       href={tx.signature ? `${explorerBase}/tx/${tx.signature}` : undefined}
       target="_blank"
       rel="noopener noreferrer"
-      className="flex items-center justify-between py-3 px-3 rounded-lg hover:bg-white/[0.02] transition-colors group"
+      className="flex items-center justify-between py-3 px-3.5 rounded-xl bg-white/[0.02] border border-white/[0.05] hover:bg-white/[0.04] hover:border-white/[0.08] transition-all group"
     >
       <div className="flex items-center gap-3">
-        <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${
+        <div className={`w-9 h-9 rounded-lg flex items-center justify-center transition-all ${
           isSend
-            ? "bg-white/[0.04] text-zinc-500 group-hover:bg-white/[0.06]"
-            : "bg-[#00e5a0]/[0.08] text-[#00e5a0] group-hover:bg-[#00e5a0]/[0.12]"
+            ? "bg-white/[0.06] text-zinc-400 border border-white/[0.06] group-hover:bg-white/[0.10]"
+            : "bg-[#00e5a0]/[0.10] text-[#00e5a0] border border-[#00e5a0]/15 group-hover:bg-[#00e5a0]/[0.16]"
         }`}>
           {isSend ? (
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
@@ -533,9 +535,15 @@ function TxRow({ tx, explorerBase }: { tx: TxHistoryEntry; explorerBase: string 
           <p className="text-[11px] text-zinc-700 font-mono">{new Date(tx.timestamp).toLocaleDateString()}</p>
         </div>
       </div>
-      <span className={`text-sm tabular-nums font-mono ${isSend ? "text-zinc-500" : "text-[#00e5a0]"}`}>
-        {isSend ? "-" : "+"}{amount.toFixed(4)}
-      </span>
+      {amount > 0 ? (
+        <span className={`text-sm tabular-nums font-mono ${isSend ? "text-zinc-500" : "text-[#00e5a0]"}`}>
+          {isSend ? "-" : "+"}{amount.toFixed(4)}
+        </span>
+      ) : (
+        <span className="text-[11px] text-zinc-600 font-mono">
+          {tx.signature ? "confirmed" : ""}
+        </span>
+      )}
     </a>
   );
 }

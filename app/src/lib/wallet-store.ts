@@ -37,7 +37,7 @@ export interface VaultEntry {
 /** Transaction history entry */
 export interface TxHistoryEntry {
   id: string;
-  type: "send" | "receive" | "migrate" | "open" | "close";
+  type: "send" | "receive" | "migrate" | "open" | "close" | "fund";
   amount: number; // Lamports
   counterparty?: string; // Address
   signature?: string; // Solana tx signature
@@ -464,11 +464,30 @@ export const useWalletStore = create<WalletState>()(
         const state = get();
         if (!state.feePayerSecret) throw new Error("Wallet not initialized");
 
-        set({ error: null });
-        const connection = getConnection(state.rpcUrl);
+        set({ loading: true, error: null });
         const feePayer = Keypair.fromSecretKey(
           Uint8Array.from(state.feePayerSecret)
         );
+
+        // If not already on localnet, check if a local validator is running
+        if (state.network !== "localnet") {
+          try {
+            const localRes = await fetch("http://localhost:8899", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "getHealth" }),
+            });
+            if (localRes.ok) {
+              // Local validator is available — switch to localnet automatically
+              get().setNetwork("localnet");
+            }
+          } catch {
+            // Local validator not running, stay on current network
+          }
+        }
+
+        const currentState = get();
+        const connection = getConnection(currentState.rpcUrl);
 
         try {
           const sig = await connection.requestAirdrop(
@@ -477,15 +496,19 @@ export const useWalletStore = create<WalletState>()(
           );
           await connection.confirmTransaction(sig, "confirmed");
           await get().refreshBalances();
+          set({ loading: false });
           return sig;
         } catch (err: unknown) {
           const msg = err instanceof Error ? err.message : String(err);
           if (msg.includes("429") || msg.includes("rate limit") || msg.includes("Too Many")) {
-            set({ error: "Devnet faucet rate limited. Visit faucet.solana.com to airdrop manually to: " + feePayer.publicKey.toBase58() });
+            set({
+              loading: false,
+              error: "Devnet faucet is rate-limited right now. Switch to 'local' network (requires running solana-test-validator) for unlimited test SOL.",
+            });
           } else {
-            set({ error: "Airdrop failed: " + msg });
+            set({ loading: false, error: "Airdrop failed: " + msg });
           }
-          throw err;
+          return "";
         }
       },
 
@@ -529,7 +552,20 @@ export const useWalletStore = create<WalletState>()(
           const sig = await connection.sendRawTransaction(tx.serialize());
           await connection.confirmTransaction(sig, "confirmed");
 
-          set({ loading: false });
+          set((s) => ({
+            loading: false,
+            history: [
+              ...s.history,
+              {
+                id: generateId(),
+                type: "fund" as const,
+                amount: transferAmount,
+                signature: sig,
+                timestamp: Date.now(),
+                status: "confirmed" as const,
+              },
+            ],
+          }));
           await get().refreshBalances();
         } catch (err: unknown) {
           set({

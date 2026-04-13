@@ -43,3 +43,5 @@ reference/
 app/AGENTS.md
 app/CLAUDE.md
 app/.claude/
+
+test-ledger/
