@@ -4,64 +4,76 @@
 
 One-time signatures. Automatic key rotation. Zero exposure. Works today, on mainnet, without waiting for a protocol upgrade.
 
+---
+
 ## The Problem
 
-Every Solana wallet today uses Ed25519 signatures, which are vulnerable to quantum computers. The Solana Foundation tested quantum-safe transactions on testnet in April 2026 -- results showed 90% speed reduction and 40x larger signatures. There's no mainnet timeline.
+Every Solana wallet today uses Ed25519 signatures -- vulnerable to quantum computers. The Solana Foundation tested quantum-safe transactions on testnet in April 2026. Results: **90% speed reduction**, **40x larger signatures**, and **no mainnet timeline**.
 
-Meanwhile, quantum computing advances continue. When quantum computers can break Ed25519, every wallet with a revealed public key is at risk. Users need protection now, not "eventually."
+Quantum computing advances don't wait. When quantum computers break Ed25519, every wallet with a revealed public key is at risk. Users need protection *now*.
 
 ## The Solution
 
-Quantum Vault wraps the [Winternitz Vault](https://github.com/deanmlittle/solana-winternitz-vault) primitive (by Dean Little) into a usable consumer wallet. Winternitz One-Time Signatures (W-OTS) are quantum-resistant by construction -- they rely only on hash function security (Keccak256), not on the hardness of discrete logarithms.
+Quantum Vault wraps the [Winternitz Vault](https://github.com/deanmlittle/solana-winternitz-vault) primitive (by Dean Little) into a consumer-grade wallet with privacy integrations. Winternitz One-Time Signatures (W-OTS) are quantum-resistant by construction -- they rely only on hash function security (Keccak256), not discrete logarithms.
 
-**Key innovation:** Every transaction automatically rotates to fresh keys. Your private key is never exposed long enough to attack -- even by a quantum computer.
+**Every transaction automatically rotates to fresh keys.** Your private key is never exposed long enough to attack -- even by a quantum computer.
 
-### How It Works
+## How It Works
 
-1. **Vault Creation** -- A Winternitz keypair is generated (32 random scalars, each hashed 256x via Keccak256). The merkle root becomes a PDA seed on Solana.
-2. **Sending** -- The vault is split: funds go to the recipient + a new pre-initialized vault with fresh keys. The old vault is atomically closed.
-3. **Receiving** -- Send SOL to your current vault address. After any spend, the address changes (like Bitcoin UTXOs).
-4. **Migration** -- Import a legacy Ed25519 wallet and transfer funds into a quantum-safe vault.
+1. **Create** -- Generates a Winternitz keypair (32 random scalars, each hashed 256x via Keccak256). The merkle root becomes a PDA on Solana.
+2. **Send** -- The vault splits: funds go to recipient + a new vault with fresh keys. Old vault is atomically closed.
+3. **Receive** -- Send SOL to your vault address. After any spend, the address rotates (like Bitcoin UTXOs).
+4. **Import** -- Migrate funds from a legacy Ed25519 wallet into a quantum-safe vault.
 
-### Architecture
+## Architecture
 
 ```
-+------------------+     +---------------------+     +------------------+
-|   Wallet UI      | --> |  TypeScript SDK     | --> | On-Chain Program |
-|   (Next.js)      |     |  (Winternitz Crypto)|     | (Pinocchio/Rust) |
-+------------------+     +---------------------+     +------------------+
-                                                            |
-                                                     Solana Devnet/Mainnet
+ Wallet UI (Next.js)
+      |
+ TypeScript SDK
+ - winternitz.ts    Keygen, sign, verify (Keccak256 W-OTS)
+ - vault.ts         Transaction builders (open/split/close)
+ - umbra.ts         Privacy layer (confidential transfers)
+ - magicblock.ts    Ephemeral rollups (fast vault rotation)
+ - wallet-store.ts  State management (vault pool, auto-rotation)
+      |
+ On-Chain Program (Rust/Pinocchio)
+ - 3 instructions: OpenVault, SplitVault, CloseVault
+ - Zero on-chain data -- PDA address IS the pubkey hash
+ - 896-byte Winternitz signatures verified on-chain
+ - Optimized for ~900K compute units
+      |
+ Solana (Devnet / Mainnet)
 ```
 
-**On-Chain Program** (Rust/Pinocchio)
-- 3 instructions: OpenVault, SplitVault, CloseVault
-- Zero on-chain data storage -- PDA address IS the pubkey hash
-- 896-byte Winternitz signatures verified on-chain
-- Optimized for Solana's compute unit limits (~900K CU)
+## Integrations
 
-**TypeScript SDK** (`app/src/lib/`)
-- `winternitz.ts` -- Full W-OTS implementation (keygen, sign, verify, serialize)
-- `vault.ts` -- Transaction builders for all 3 vault instructions
-- `wallet-store.ts` -- Zustand state management with vault pool, auto-rotation, balance aggregation
+### Umbra Privacy SDK
 
-**Wallet Frontend** (Next.js + Tailwind)
-- Create quantum-safe wallet
-- Send/Receive SOL with automatic vault rotation
-- Migrate from legacy Ed25519 wallet
-- Vault pool management with quantum shield status
-- Transaction history with Solana Explorer links
-- Devnet airdrop + fund for testing
+Adds **confidential transfers** on top of quantum safety. The flow:
 
-## Getting Started
+1. Vault signs with W-OTS (quantum-safe authorization)
+2. Funds route through Umbra's encrypted UTXO system
+3. Recipient scans and claims -- sender and amount hidden on-chain
 
-### Prerequisites
+This gives both **quantum resistance** and **transaction privacy** -- a combination no other wallet offers.
 
-- Node.js 18+
-- Rust + Cargo (for program development)
-- Solana CLI (for deployment)
+- SDK: `@umbra-privacy/sdk`
+- Program: `UMBRAD2ishebJTcgCLkTkNUx1v3GyoAgpTRPeWoLykh` (mainnet)
+- Toggle: "Private send" in the Send modal
 
-### Run the Wallet
+### MagicBlock Ephemeral Rollups
+
+Uses MagicBlock's high-speed execution environment for vault operations:
+
+- **10-50ms** latency for vault rotation (vs ~400ms on mainnet)
+- Batch pre-initialize multiple vaults
+- Private execution environment for key rotation
+
+- Router: `https://router.magicblock.app`
+- Integration: Vault transactions route through MagicBlock when available
+
+## Quick Start
 
 ```bash
 cd app
@@ -69,7 +81,7 @@ npm install
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) and create your quantum-safe wallet.
+Open [http://localhost:3000](http://localhost:3000).
 
 ### Build the On-Chain Program
 
@@ -78,57 +90,63 @@ cd program
 cargo build-sbf
 ```
 
-The compiled program is at `program/target/deploy/quantum_vault.so`.
-
-### Deploy to Devnet
+### Deploy
 
 ```bash
+# Devnet
 solana config set --url devnet
 solana airdrop 2
+solana program deploy program/target/deploy/quantum_vault.so --program-id program/keypair.json
+
+# Mainnet
+solana config set --url mainnet-beta
 solana program deploy program/target/deploy/quantum_vault.so --program-id program/keypair.json
 ```
 
 ## Technical Details
 
-### Winternitz Signature Parameters
-
 | Parameter | Value |
 |-----------|-------|
 | Hash function | Keccak256 |
 | Message digest | 224 bits (28 bytes, truncated) |
-| Signature components | 28 x 32 bytes = 896 bytes |
-| Public key components | 32 x 32 bytes = 1024 bytes |
+| Signature size | 28 x 32 bytes = **896 bytes** |
+| Public key | 32 x 32 bytes = 1024 bytes |
 | Chain length | 256 iterations |
-| Security level | Post-quantum (hash-based) |
+| Transaction size | ~1,200 / 1,232 byte MTU limit |
+| Compute units | ~900,000 CU per signature verify |
+| Security | Post-quantum (hash-based) |
 
-### Transaction Size
+### Why Pinocchio, not Anchor?
 
-Winternitz signatures are large (896 bytes). Combined with instruction data and account metas, vault transactions barely fit within Solana's 1,232-byte MTU limit. This is why the program uses pinocchio (lightweight) instead of Anchor, and why vault rotation happens across separate transactions managed by the wallet.
+Winternitz signatures are 896 bytes. Combined with instruction data and account metas, transactions barely fit Solana's 1,232-byte MTU. Pinocchio's zero-overhead approach saves the bytes and compute that Anchor's framework overhead would consume.
 
 ### Vault Rotation Strategy
 
 The wallet manages a pool of pre-initialized vaults:
+1. Maintain 2+ ready vaults at all times
+2. On send: `SplitVault(old -> recipient + pre-opened vault)`
+3. Background replenishment after every spend
 
-1. Always maintain 2+ ready vaults
-2. On send: SplitVault(old -> recipient + pre-opened vault)
-3. Refund (remainder) goes to the next available vault
-4. Background replenishment opens new vaults after spends
-
-This makes the one-time signature constraint invisible to the user.
+The one-time signature constraint is invisible to the user.
 
 ## Security Model
 
-- **Quantum-resistant:** Winternitz signatures rely on Keccak256 hash security, not discrete log
-- **One-time use enforced:** Vault is closed after every signing operation -- no key reuse possible
-- **Client-side only:** Private keys never leave the browser (localStorage + Zustand persist)
-- **No servers:** Fully decentralized, direct Solana RPC
-- **Replay protection:** Vault closure prevents replay; signed messages commit to recipient keys
+- **Quantum-resistant** -- Winternitz signatures rely on Keccak256, not discrete log
+- **One-time use enforced** -- Vault closes after every sign; no key reuse possible
+- **Client-side only** -- Keys never leave the browser
+- **No servers** -- Direct Solana RPC, fully decentralized
+- **Replay-proof** -- Vault closure + committed recipient keys prevent replay
+- **Private** (optional) -- Umbra integration shields transfer details
 
 ## Hackathon
 
-Built for the **Colosseum Frontier Hackathon** (May 2026).
+Built for the **Colosseum Frontier Hackathon** (April-May 2026).
 
-Based on the [Winternitz Vault](https://github.com/deanmlittle/solana-winternitz-vault) by Dean Little -- we built the wallet experience that makes quantum safety accessible.
+Side track submissions:
+- **Umbra SDK** -- Confidential transfers with quantum-safe authorization
+- **MagicBlock** -- Ephemeral rollups for high-speed vault rotation
+
+Based on the [Winternitz Vault](https://github.com/deanmlittle/solana-winternitz-vault) by Dean Little.
 
 ## License
 

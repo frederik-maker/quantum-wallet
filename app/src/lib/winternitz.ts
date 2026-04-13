@@ -1,20 +1,23 @@
 /**
  * Winternitz One-Time Signature (W-OTS) implementation in TypeScript.
- * Matches the solana-winternitz v0.1.1 crate used by the vault program.
+ * Matches the solana-winternitz v0.1.1 Rust crate exactly.
  *
  * Parameters:
  *   - Hash: Keccak256
- *   - Message digest: truncated to 28 bytes (224 bits)
- *   - 32 hash chain components of 32 bytes each (pubkey)
- *   - 28 signature components of 32 bytes each (signature)
+ *   - HASH_LENGTH = 28 (each component is 28 bytes, truncated Keccak256)
+ *   - NUM_CHAINS = 32 (32 hash chains)
  *   - Chain length: 256 iterations
+ *   - Signature: 32 x 28 bytes = 896 bytes
+ *   - Pubkey: 32 x 28 bytes = 896 bytes
+ *   - Pubkey hash: 32 bytes (Keccak256 merkle root)
  */
 
 import jssha3 from "js-sha3";
 const keccak256Fn = jssha3.keccak256;
 
-const HASH_LENGTH = 28;
-const CHAIN_COUNT = 32;
+export const HASH_LENGTH = 28;
+export const NUM_CHAINS = 32;
+export const SIG_SIZE = HASH_LENGTH * NUM_CHAINS; // 896 bytes
 
 type Bytes = Uint8Array<ArrayBuffer>;
 
@@ -23,46 +26,67 @@ function toBytes(data: Uint8Array): Bytes {
   return new Uint8Array(data) as Bytes;
 }
 
-/** Keccak256 hash */
-function keccak(data: Uint8Array): Bytes {
+/** Keccak256 full 32-byte output */
+function keccakFull(data: Uint8Array): Bytes {
   return new Uint8Array(keccak256Fn.arrayBuffer(data)) as Bytes;
 }
 
-/** Double Keccak256 (hashd) — used for message digest */
-function hashd(data: Uint8Array): Bytes {
-  return keccak(keccak(data));
+/** Keccak256 truncated to first 28 bytes (matches Rust split_first_chunk::<28>) */
+function keccakTrunc(data: Uint8Array): Bytes {
+  return toBytes(keccakFull(data).slice(0, HASH_LENGTH));
 }
 
-/** Hash a value n times: H^n(x) */
-function hashN(x: Uint8Array, n: number): Bytes {
-  let result: Bytes = toBytes(x);
+/** Hash chain: hash N times, each time truncating to 28 bytes */
+function hashChain(seed: Uint8Array, n: number): Bytes {
+  let result: Bytes = toBytes(seed);
   for (let i = 0; i < n; i++) {
-    result = keccak(result);
+    result = keccakTrunc(result);
   }
   return result;
 }
 
-/** Hash pair for merkle tree: Keccak256(a || b) */
-function hashPair(a: Uint8Array, b: Uint8Array): Bytes {
-  const combined = new Uint8Array(64) as Bytes;
-  combined.set(a, 0);
-  combined.set(b, 32);
-  return keccak(combined);
+/** hashv: Keccak256 of concatenated inputs (matches solana_nostd_keccak::hashv) */
+function hashv(slices: Uint8Array[]): Bytes {
+  let totalLen = 0;
+  for (const s of slices) totalLen += s.length;
+  const combined = new Uint8Array(totalLen) as Bytes;
+  let offset = 0;
+  for (const s of slices) {
+    combined.set(s, offset);
+    offset += s.length;
+  }
+  return keccakFull(combined);
 }
 
-/** Compute merkle root from 32 leaf nodes */
+/**
+ * Compute merkle root from 32 leaf nodes.
+ * Exactly matches the hardcoded binary tree in WinternitzPubkey::merklize().
+ */
 function merklize(leaves: Uint8Array[]): Bytes {
-  if (leaves.length !== CHAIN_COUNT) throw new Error("Expected 32 leaves");
+  if (leaves.length !== NUM_CHAINS) throw new Error("Expected 32 leaves");
 
-  let layer = leaves.map(toBytes);
-  while (layer.length > 1) {
-    const next: Bytes[] = [];
-    for (let i = 0; i < layer.length; i += 2) {
-      next.push(hashPair(layer[i], layer[i + 1]));
-    }
-    layer = next;
+  // Level 1: pair adjacent leaves (28+28=56 bytes -> keccak -> 32 bytes)
+  const l1: Bytes[] = [];
+  for (let i = 0; i < 32; i += 2) {
+    l1.push(hashv([leaves[i], leaves[i + 1]]));
   }
-  return layer[0];
+  // Level 2: 32+32=64 bytes -> 32 bytes
+  const l2: Bytes[] = [];
+  for (let i = 0; i < 16; i += 2) {
+    l2.push(hashv([l1[i], l1[i + 1]]));
+  }
+  // Level 3
+  const l3: Bytes[] = [];
+  for (let i = 0; i < 8; i += 2) {
+    l3.push(hashv([l2[i], l2[i + 1]]));
+  }
+  // Level 4
+  const l4: Bytes[] = [];
+  for (let i = 0; i < 4; i += 2) {
+    l4.push(hashv([l3[i], l3[i + 1]]));
+  }
+  // Root
+  return hashv([l4[0], l4[1]]);
 }
 
 export interface WinternitzKeypair {
@@ -75,15 +99,19 @@ export interface WinternitzSignature {
   components: Bytes[];
 }
 
-/** Generate a new Winternitz keypair */
+/** Generate a new Winternitz keypair (32 x 28-byte scalars) */
 export function generateKeypair(): WinternitzKeypair {
   const privkey: Bytes[] = [];
   const pubkey: Bytes[] = [];
 
-  for (let i = 0; i < CHAIN_COUNT; i++) {
-    const scalar = crypto.getRandomValues(new Uint8Array(32)) as Bytes;
+  for (let i = 0; i < NUM_CHAINS; i++) {
+    // 28-byte random scalar (matches Rust [[u8;HASH_LENGTH];32])
+    const scalar = crypto.getRandomValues(
+      new Uint8Array(HASH_LENGTH)
+    ) as Bytes;
     privkey.push(scalar);
-    pubkey.push(hashN(scalar, 256));
+    // Hash 256 times with truncation
+    pubkey.push(hashChain(scalar, 256));
   }
 
   const pubkeyHash = merklize(pubkey);
@@ -95,13 +123,12 @@ export function sign(
   privkey: Uint8Array[],
   message: Uint8Array
 ): WinternitzSignature {
-  const digest = hashd(message);
+  // Single Keccak256 digest (32 bytes = one byte per chain)
+  const digest = keccakFull(message);
   const components: Bytes[] = [];
 
-  for (let i = 0; i < HASH_LENGTH; i++) {
-    const v = digest[i];
-    const n = 256 - v;
-    components.push(hashN(privkey[i], n));
+  for (let i = 0; i < NUM_CHAINS; i++) {
+    components.push(hashChain(privkey[i], 256 - digest[i]));
   }
 
   return { components };
@@ -112,22 +139,21 @@ export function recoverPubkey(
   signature: WinternitzSignature,
   message: Uint8Array
 ): Bytes[] {
-  const digest = hashd(message);
+  const digest = keccakFull(message);
   const pubkey: Bytes[] = [];
 
-  for (let i = 0; i < HASH_LENGTH; i++) {
-    const v = digest[i];
-    pubkey.push(hashN(signature.components[i], v));
+  for (let i = 0; i < NUM_CHAINS; i++) {
+    pubkey.push(hashChain(signature.components[i], digest[i]));
   }
 
   return pubkey;
 }
 
-/** Serialize a signature to bytes (28 * 32 = 896 bytes) */
+/** Serialize a signature to bytes (32 x 28 = 896 bytes, stride 28) */
 export function serializeSignature(sig: WinternitzSignature): Bytes {
-  const bytes = new Uint8Array(HASH_LENGTH * 32) as Bytes;
-  for (let i = 0; i < HASH_LENGTH; i++) {
-    bytes.set(sig.components[i], i * 32);
+  const bytes = new Uint8Array(SIG_SIZE) as Bytes;
+  for (let i = 0; i < NUM_CHAINS; i++) {
+    bytes.set(sig.components[i], i * HASH_LENGTH);
   }
   return bytes;
 }
@@ -135,8 +161,10 @@ export function serializeSignature(sig: WinternitzSignature): Bytes {
 /** Deserialize a signature from bytes */
 export function deserializeSignature(bytes: Uint8Array): WinternitzSignature {
   const components: Bytes[] = [];
-  for (let i = 0; i < HASH_LENGTH; i++) {
-    components.push(toBytes(bytes.slice(i * 32, (i + 1) * 32)));
+  for (let i = 0; i < NUM_CHAINS; i++) {
+    components.push(
+      toBytes(bytes.slice(i * HASH_LENGTH, (i + 1) * HASH_LENGTH))
+    );
   }
   return { components };
 }
@@ -155,13 +183,13 @@ export function deserializeKeypair(json: string): WinternitzKeypair {
   const privkey: Bytes[] = data.privkey.map(
     (s: number[]) => new Uint8Array(s) as Bytes
   );
-  const pubkey: Bytes[] = privkey.map((s) => hashN(s, 256));
+  const pubkey: Bytes[] = privkey.map((s) => hashChain(s, 256));
   const pubkeyHash = merklize(pubkey);
   return { privkey, pubkey, pubkeyHash };
 }
 
 /** Get the pubkey hash from just the private key scalars */
 export function pubkeyHashFromPrivkey(privkey: Uint8Array[]): Bytes {
-  const pubkey = privkey.map((s) => hashN(s, 256));
+  const pubkey = privkey.map((s) => hashChain(s, 256));
   return merklize(pubkey);
 }

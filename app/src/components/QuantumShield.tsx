@@ -1,48 +1,33 @@
 "use client";
 
-import { Shield, ShieldCheck, ShieldAlert } from "lucide-react";
-
 interface QuantumShieldProps {
   status: "protected" | "rotating" | "vulnerable";
-  className?: string;
 }
 
-export function QuantumShield({ status, className = "" }: QuantumShieldProps) {
-  const config = {
-    protected: {
-      icon: ShieldCheck,
-      label: "Quantum Safe",
-      color: "text-emerald-400",
-      bg: "bg-emerald-500/10",
-      border: "border-emerald-500/20",
-      pulse: false,
-    },
-    rotating: {
-      icon: Shield,
-      label: "Rotating Keys",
-      color: "text-amber-400",
-      bg: "bg-amber-500/10",
-      border: "border-amber-500/20",
-      pulse: true,
-    },
-    vulnerable: {
-      icon: ShieldAlert,
-      label: "Not Protected",
-      color: "text-red-400",
-      bg: "bg-red-500/10",
-      border: "border-red-500/20",
-      pulse: false,
-    },
-  };
+export function QuantumShield({ status }: QuantumShieldProps) {
+  if (status === "protected") {
+    return (
+      <div className="flex items-center gap-2">
+        <div className="relative w-2 h-2 rounded-full bg-[#00e5a0] glow-dot" />
+        <span className="text-xs font-mono text-zinc-500 uppercase tracking-wider">Quantum Safe</span>
+      </div>
+    );
+  }
 
-  const { icon: Icon, label, color, bg, border, pulse } = config[status];
+  if (status === "rotating") {
+    return (
+      <div className="flex items-center gap-2">
+        <div className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+        <span className="text-xs font-mono text-zinc-500 uppercase tracking-wider">Syncing</span>
+      </div>
+    );
+  }
 
+  // "vulnerable" = no vaults yet, just needs setup
   return (
-    <div
-      className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full border ${bg} ${border} ${className}`}
-    >
-      <Icon className={`w-4 h-4 ${color} ${pulse ? "animate-pulse" : ""}`} />
-      <span className={`text-xs font-medium ${color}`}>{label}</span>
+    <div className="flex items-center gap-2">
+      <div className="w-2 h-2 rounded-full bg-zinc-600" />
+      <span className="text-xs font-mono text-zinc-600 uppercase tracking-wider">No Vaults</span>
     </div>
   );
 }

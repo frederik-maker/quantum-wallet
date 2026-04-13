@@ -1,29 +1,13 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import {
-  Send,
-  Download,
-  RefreshCw,
-  Copy,
-  Check,
-  ArrowUpRight,
-  ArrowDownLeft,
-  Clock,
-  ChevronDown,
-  Wallet,
-  Shield,
-  ExternalLink,
-  Droplets,
-  Loader2,
-  Zap,
-} from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useWalletStore, TxHistoryEntry } from "@/lib/wallet-store";
 import { QuantumShield } from "./QuantumShield";
 import { SendModal } from "./SendModal";
 import { ReceiveModal } from "./ReceiveModal";
 import { MigrateModal } from "./MigrateModal";
-import { VaultPanel } from "./VaultPanel";
+import { PrivacyPanel } from "./PrivacyPanel";
 import { LAMPORTS_PER_SOL } from "@/lib/constants";
 
 export function WalletDashboard() {
@@ -37,30 +21,29 @@ export function WalletDashboard() {
     error,
     refreshBalances,
     setNetwork,
-    feePayerSecret,
     resetWallet,
     airdrop,
     fundVault,
   } = useWalletStore();
 
-  const [showSend, setShowSend] = useState(false);
-  const [showReceive, setShowReceive] = useState(false);
-  const [showMigrate, setShowMigrate] = useState(false);
+  const [activeModal, setActiveModal] = useState<"send" | "receive" | "migrate" | null>(null);
   const [showVaults, setShowVaults] = useState(false);
+  const [showPrivacy, setShowPrivacy] = useState(false);
   const [copied, setCopied] = useState(false);
   const [airdropping, setAirdropping] = useState(false);
   const [funding, setFunding] = useState(false);
 
   const activeVaults = vaults.filter((v) => v.status === "active");
+  const spentVaults = vaults.filter((v) => v.status === "spent");
   const solBalance = totalBalance / LAMPORTS_PER_SOL;
+  const receiveAddress = activeVaults[0]?.address;
+  const recentHistory = history.slice().reverse().slice(0, 8);
 
   useEffect(() => {
     refreshBalances();
     const interval = setInterval(refreshBalances, 15000);
     return () => clearInterval(interval);
   }, [refreshBalances]);
-
-  const receiveAddress = activeVaults[0]?.address;
 
   const copyAddress = useCallback(() => {
     if (receiveAddress) {
@@ -70,304 +53,279 @@ export function WalletDashboard() {
     }
   }, [receiveAddress]);
 
-  const recentHistory = history.slice().reverse().slice(0, 10);
+  const explorerBase = network === "mainnet-beta"
+    ? "https://explorer.solana.com"
+    : `https://explorer.solana.com/?cluster=${network}`;
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen noise">
+      {/* Background */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] rounded-full bg-[#00e5a0]/[0.02] blur-[120px]" />
+      </div>
+
       {/* Header */}
-      <header className="border-b border-zinc-800/50 bg-zinc-950/80 backdrop-blur-xl sticky top-0 z-50">
-        <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between">
+      <header className="sticky top-0 z-40 backdrop-blur-xl bg-[#050507]/80 border-b border-white/[0.04]">
+        <div className="max-w-xl mx-auto px-5 h-14 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-cyan-500 flex items-center justify-center">
-              <Shield className="w-4 h-4 text-white" />
+            <div className="w-7 h-7 rounded-lg bg-[#00e5a0] flex items-center justify-center">
+              <span className="text-black text-xs font-black">QV</span>
             </div>
-            <div>
-              <h1 className="text-sm font-semibold text-white">{walletName}</h1>
-              <span className="text-xs text-zinc-500">{network}</span>
-            </div>
+            <span className="text-sm font-medium text-zinc-300">{walletName}</span>
           </div>
-          <div className="flex items-center gap-2">
-            <QuantumShield
-              status={loading ? "rotating" : activeVaults.length > 0 ? "protected" : "vulnerable"}
-            />
-            <button
-              onClick={() => refreshBalances()}
-              className="p-2 rounded-lg hover:bg-zinc-800 transition"
-              title="Refresh"
+          <div className="flex items-center gap-4">
+            <QuantumShield status={loading ? "rotating" : activeVaults.length > 0 ? "protected" : "vulnerable"} />
+            <select
+              value={network}
+              onChange={(e) => setNetwork(e.target.value as "devnet" | "mainnet-beta" | "testnet")}
+              className="bg-transparent text-xs font-mono text-zinc-600 focus:outline-none cursor-pointer"
             >
-              <RefreshCw className={`w-4 h-4 text-zinc-400 ${loading ? "animate-spin" : ""}`} />
-            </button>
+              <option value="devnet" className="bg-zinc-900">devnet</option>
+              <option value="testnet" className="bg-zinc-900">testnet</option>
+              <option value="mainnet-beta" className="bg-zinc-900">mainnet</option>
+            </select>
           </div>
         </div>
       </header>
 
-      <main className="max-w-2xl mx-auto px-4 py-6 space-y-6">
-        {/* Error Banner */}
-        {error && (
-          <div className="bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3 text-red-400 text-sm">
-            {error}
-          </div>
-        )}
+      <main className="relative z-10 max-w-xl mx-auto px-5 py-8">
+        {/* Error */}
+        <AnimatePresence>
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="mb-6 text-sm text-red-400/80 bg-red-500/5 border border-red-500/10 rounded-xl px-4 py-3"
+            >
+              {error}
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-        {/* Balance Card */}
-        <div className="bg-gradient-to-br from-zinc-900 to-zinc-900/50 border border-zinc-800 rounded-2xl p-6">
-          <div className="text-sm text-zinc-400 mb-1">Total Balance</div>
-          <div className="flex items-baseline gap-2 mb-1">
-            <span className="text-4xl font-bold text-white">
+        {/* Balance */}
+        <div className="mb-10">
+          <p className="text-xs font-mono text-zinc-600 uppercase tracking-widest mb-3">Total Balance</p>
+          <div className="flex items-baseline gap-3">
+            <motion.span
+              key={solBalance}
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-6xl sm:text-7xl font-bold text-white tracking-tight tabular-nums"
+            >
               {solBalance.toFixed(4)}
-            </span>
-            <span className="text-lg text-zinc-500">SOL</span>
+            </motion.span>
+            <span className="text-xl text-zinc-600 font-light">SOL</span>
           </div>
-          <div className="text-sm text-zinc-500">
-            Across {activeVaults.length} active vault{activeVaults.length !== 1 ? "s" : ""}
-          </div>
-
-          {/* Receive Address Preview */}
           {receiveAddress && (
-            <div className="mt-4 flex items-center gap-2">
-              <code className="text-xs text-zinc-500 font-mono truncate flex-1">
+            <button
+              onClick={copyAddress}
+              className="mt-3 flex items-center gap-2 group"
+            >
+              <code className="text-xs text-zinc-600 font-mono group-hover:text-zinc-400 transition truncate max-w-[260px]">
                 {receiveAddress}
               </code>
-              <button
-                onClick={copyAddress}
-                className="p-1.5 rounded-lg hover:bg-zinc-800 transition shrink-0"
-              >
-                {copied ? (
-                  <Check className="w-3.5 h-3.5 text-emerald-400" />
-                ) : (
-                  <Copy className="w-3.5 h-3.5 text-zinc-500" />
-                )}
-              </button>
-            </div>
+              <span className="text-xs text-zinc-700 group-hover:text-[#00e5a0] transition">
+                {copied ? "copied" : "copy"}
+              </span>
+            </button>
           )}
         </div>
 
-        {/* Action Buttons */}
-        <div className="grid grid-cols-3 gap-3">
-          <button
-            onClick={() => setShowSend(true)}
-            className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 flex flex-col items-center gap-2 hover:bg-zinc-800/50 hover:border-zinc-700 transition group"
-          >
-            <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center group-hover:bg-blue-500/20 transition">
-              <Send className="w-5 h-5 text-blue-400" />
-            </div>
-            <span className="text-sm font-medium text-white">Send</span>
-          </button>
-          <button
-            onClick={() => setShowReceive(true)}
-            className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 flex flex-col items-center gap-2 hover:bg-zinc-800/50 hover:border-zinc-700 transition group"
-          >
-            <div className="w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center group-hover:bg-emerald-500/20 transition">
-              <Download className="w-5 h-5 text-emerald-400" />
-            </div>
-            <span className="text-sm font-medium text-white">Receive</span>
-          </button>
-          <button
-            onClick={() => setShowMigrate(true)}
-            className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 flex flex-col items-center gap-2 hover:bg-zinc-800/50 hover:border-zinc-700 transition group"
-          >
-            <div className="w-10 h-10 rounded-full bg-purple-500/10 flex items-center justify-center group-hover:bg-purple-500/20 transition">
-              <Wallet className="w-5 h-5 text-purple-400" />
-            </div>
-            <span className="text-sm font-medium text-white">Migrate</span>
-          </button>
+        {/* Actions */}
+        <div className="flex gap-3 mb-10">
+          {[
+            { key: "send" as const, label: "Send" },
+            { key: "receive" as const, label: "Receive" },
+            { key: "migrate" as const, label: "Import" },
+          ].map(({ key, label }) => (
+            <button
+              key={key}
+              onClick={() => setActiveModal(key)}
+              className="flex-1 py-3 rounded-xl border border-white/[0.06] bg-white/[0.02] text-sm font-medium text-zinc-300 hover:bg-white/[0.05] hover:border-white/[0.1] hover:text-white transition-all"
+            >
+              {label}
+            </button>
+          ))}
         </div>
 
         {/* Devnet Quick Start */}
         {network === "devnet" && totalBalance === 0 && (
-          <div className="bg-gradient-to-r from-cyan-500/5 to-emerald-500/5 border border-cyan-500/10 rounded-xl p-4">
-            <p className="text-sm font-medium text-white mb-1">Get Started on Devnet</p>
-            <p className="text-xs text-zinc-500 mb-3">
-              Airdrop test SOL, then fund your quantum vault.
-            </p>
-            <div className="flex gap-2">
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-10 p-5 rounded-2xl border border-[#00e5a0]/10 bg-[#00e5a0]/[0.02]"
+          >
+            <p className="text-sm font-medium text-white mb-1">Quick start</p>
+            <p className="text-xs text-zinc-500 mb-4">Airdrop test SOL, then fund your quantum vault.</p>
+            <div className="flex gap-3">
               <button
                 onClick={async () => {
                   setAirdropping(true);
-                  try {
-                    await airdrop();
-                  } catch (e) {
-                    console.error(e);
-                  }
+                  try { await airdrop(); } catch (e) { console.error(e); }
                   setAirdropping(false);
                 }}
                 disabled={airdropping}
-                className="flex-1 flex items-center justify-center gap-2 bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 py-2 rounded-lg text-sm font-medium hover:bg-cyan-500/20 transition disabled:opacity-50"
+                className="flex-1 py-2.5 rounded-xl border border-[#00e5a0]/20 text-[#00e5a0] text-sm font-medium hover:bg-[#00e5a0]/5 transition disabled:opacity-40"
               >
-                {airdropping ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Droplets className="w-4 h-4" />
-                )}
-                Airdrop 2 SOL
+                {airdropping ? "Airdropping..." : "Airdrop 2 SOL"}
               </button>
               <button
                 onClick={async () => {
                   setFunding(true);
-                  try {
-                    await fundVault();
-                  } catch (e) {
-                    console.error(e);
-                  }
+                  try { await fundVault(); } catch (e) { console.error(e); }
                   setFunding(false);
                 }}
                 disabled={funding}
-                className="flex-1 flex items-center justify-center gap-2 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 py-2 rounded-lg text-sm font-medium hover:bg-emerald-500/20 transition disabled:opacity-50"
+                className="flex-1 py-2.5 rounded-xl bg-[#00e5a0] text-black text-sm font-semibold hover:shadow-[0_0_30px_rgba(0,229,160,0.2)] transition disabled:opacity-40"
               >
-                {funding ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Zap className="w-4 h-4" />
-                )}
-                Fund Vault
+                {funding ? "Funding..." : "Fund Vault"}
               </button>
             </div>
-          </div>
+          </motion.div>
         )}
 
         {/* Vault Status */}
         <button
           onClick={() => setShowVaults(!showVaults)}
-          className="w-full bg-zinc-900/50 border border-zinc-800 rounded-xl px-4 py-3 flex items-center justify-between hover:bg-zinc-800/30 transition"
+          className="w-full flex items-center justify-between py-3 mb-2"
         >
           <div className="flex items-center gap-3">
-            <Shield className="w-4 h-4 text-emerald-400" />
-            <span className="text-sm text-zinc-300">
-              {activeVaults.length} Quantum Vault{activeVaults.length !== 1 ? "s" : ""} Active
+            <div className={`w-2 h-2 rounded-full ${activeVaults.length > 0 ? "bg-[#00e5a0] glow-dot" : "bg-zinc-700"}`} />
+            <span className="text-sm text-zinc-400">
+              {activeVaults.length} vault{activeVaults.length !== 1 ? "s" : ""} active
+              {spentVaults.length > 0 && <span className="text-zinc-700"> &middot; {spentVaults.length} rotated</span>}
             </span>
           </div>
-          <ChevronDown
-            className={`w-4 h-4 text-zinc-500 transition ${showVaults ? "rotate-180" : ""}`}
-          />
+          <svg
+            width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+            className={`text-zinc-700 transition-transform ${showVaults ? "rotate-180" : ""}`}
+          >
+            <path d="M6 9l6 6 6-6" />
+          </svg>
         </button>
 
-        {showVaults && <VaultPanel />}
+        <AnimatePresence>
+          {showVaults && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="overflow-hidden mb-6"
+            >
+              <div className="space-y-1 pb-4">
+                {activeVaults.map((vault) => (
+                  <a
+                    key={vault.id}
+                    href={`${explorerBase}/address/${vault.address}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-between py-2.5 px-3 rounded-lg hover:bg-white/[0.02] transition group"
+                  >
+                    <code className="text-xs text-zinc-600 font-mono truncate max-w-[240px] group-hover:text-zinc-400 transition">
+                      {vault.address}
+                    </code>
+                    <span className="text-xs tabular-nums text-zinc-500">
+                      {(vault.balance / LAMPORTS_PER_SOL).toFixed(4)}
+                    </span>
+                  </a>
+                ))}
+                {activeVaults.length === 0 && (
+                  <p className="text-xs text-zinc-700 py-2 px-3">No active vaults. Fund your wallet to create one.</p>
+                )}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-        {/* Transaction History */}
+        {/* Privacy Integrations */}
+        <button
+          onClick={() => setShowPrivacy(!showPrivacy)}
+          className="w-full flex items-center justify-between py-3 mb-2"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-2 h-2 rounded-full bg-purple-500/50" />
+            <span className="text-sm text-zinc-400">Privacy &amp; Speed</span>
+            <span className="text-xs text-zinc-700 font-mono">Umbra + MagicBlock</span>
+          </div>
+          <svg
+            width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+            className={`text-zinc-700 transition-transform ${showPrivacy ? "rotate-180" : ""}`}
+          >
+            <path d="M6 9l6 6 6-6" />
+          </svg>
+        </button>
+
+        <AnimatePresence>
+          {showPrivacy && <PrivacyPanel />}
+        </AnimatePresence>
+
+        {/* Divider */}
+        <div className="border-t border-white/[0.04] mb-6" />
+
+        {/* History */}
         <div>
-          <h2 className="text-sm font-semibold text-zinc-400 mb-3 px-1">
-            Recent Activity
-          </h2>
+          <p className="text-xs font-mono text-zinc-600 uppercase tracking-widest mb-4">Activity</p>
           {recentHistory.length === 0 ? (
-            <div className="bg-zinc-900/30 border border-zinc-800/50 rounded-xl p-8 text-center">
-              <Clock className="w-8 h-8 text-zinc-700 mx-auto mb-2" />
-              <p className="text-zinc-500 text-sm">No transactions yet</p>
-              <p className="text-zinc-600 text-xs mt-1">
-                Fund your wallet to get started
-              </p>
+            <div className="py-16 text-center">
+              <p className="text-zinc-700 text-sm">No activity yet</p>
             </div>
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-1">
               {recentHistory.map((tx) => (
-                <TxHistoryRow key={tx.id} tx={tx} network={network} />
+                <TxRow key={tx.id} tx={tx} explorerBase={explorerBase} />
               ))}
             </div>
           )}
         </div>
 
-        {/* Footer Actions */}
-        <div className="flex items-center justify-between pt-4 border-t border-zinc-800/50">
-          <select
-            value={network}
-            onChange={(e) => setNetwork(e.target.value as "devnet" | "mainnet-beta" | "testnet")}
-            className="bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-1.5 text-xs text-zinc-400 focus:outline-none"
-          >
-            <option value="devnet">Devnet</option>
-            <option value="testnet">Testnet</option>
-            <option value="mainnet-beta">Mainnet</option>
-          </select>
+        {/* Footer */}
+        <div className="mt-12 pt-6 border-t border-white/[0.04] flex items-center justify-between">
+          <p className="text-xs text-zinc-800">Quantum Vault v0.1</p>
           <button
             onClick={resetWallet}
-            className="text-xs text-zinc-600 hover:text-red-400 transition"
+            className="text-xs text-zinc-800 hover:text-red-400 transition"
           >
-            Reset Wallet
+            Reset
           </button>
         </div>
       </main>
 
       {/* Modals */}
-      {showSend && <SendModal onClose={() => setShowSend(false)} />}
-      {showReceive && <ReceiveModal onClose={() => setShowReceive(false)} />}
-      {showMigrate && <MigrateModal onClose={() => setShowMigrate(false)} />}
+      <AnimatePresence>
+        {activeModal === "send" && <SendModal onClose={() => setActiveModal(null)} />}
+        {activeModal === "receive" && <ReceiveModal onClose={() => setActiveModal(null)} />}
+        {activeModal === "migrate" && <MigrateModal onClose={() => setActiveModal(null)} />}
+      </AnimatePresence>
     </div>
   );
 }
 
-function TxHistoryRow({
-  tx,
-  network,
-}: {
-  tx: TxHistoryEntry;
-  network: string;
-}) {
+function TxRow({ tx, explorerBase }: { tx: TxHistoryEntry; explorerBase: string }) {
   const isSend = tx.type === "send";
-  const isMigrate = tx.type === "migrate";
   const amount = tx.amount / LAMPORTS_PER_SOL;
-  const explorerBase =
-    network === "mainnet-beta"
-      ? "https://explorer.solana.com"
-      : `https://explorer.solana.com/?cluster=${network}`;
 
   return (
-    <div className="bg-zinc-900/30 border border-zinc-800/50 rounded-xl px-4 py-3 flex items-center gap-3">
-      <div
-        className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
-          isSend
-            ? "bg-blue-500/10"
-            : isMigrate
-            ? "bg-purple-500/10"
-            : "bg-emerald-500/10"
-        }`}
-      >
-        {isSend ? (
-          <ArrowUpRight className="w-4 h-4 text-blue-400" />
-        ) : isMigrate ? (
-          <Wallet className="w-4 h-4 text-purple-400" />
-        ) : (
-          <ArrowDownLeft className="w-4 h-4 text-emerald-400" />
-        )}
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-white capitalize">
-            {tx.type}
-          </span>
-          <span
-            className={`text-xs px-1.5 py-0.5 rounded ${
-              tx.status === "confirmed"
-                ? "bg-emerald-500/10 text-emerald-400"
-                : tx.status === "failed"
-                ? "bg-red-500/10 text-red-400"
-                : "bg-amber-500/10 text-amber-400"
-            }`}
-          >
-            {tx.status}
-          </span>
+    <a
+      href={tx.signature ? `${explorerBase}/tx/${tx.signature}` : undefined}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="flex items-center justify-between py-3 px-3 rounded-lg hover:bg-white/[0.02] transition group"
+    >
+      <div className="flex items-center gap-3">
+        <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${
+          isSend ? "bg-white/[0.04] text-zinc-400" : "bg-[#00e5a0]/10 text-[#00e5a0]"
+        }`}>
+          {isSend ? "\u2191" : "\u2193"}
         </div>
-        {tx.counterparty && (
-          <p className="text-xs text-zinc-500 font-mono truncate">
-            {tx.counterparty}
-          </p>
-        )}
-      </div>
-      <div className="text-right shrink-0">
-        <div className={`text-sm font-medium ${isSend ? "text-blue-400" : "text-emerald-400"}`}>
-          {isSend ? "-" : "+"}{amount.toFixed(4)} SOL
-        </div>
-        <div className="text-xs text-zinc-600">
-          {new Date(tx.timestamp).toLocaleTimeString()}
+        <div>
+          <p className="text-sm text-zinc-300 capitalize">{tx.type}</p>
+          <p className="text-xs text-zinc-700">{new Date(tx.timestamp).toLocaleDateString()}</p>
         </div>
       </div>
-      {tx.signature && (
-        <a
-          href={`${explorerBase}/tx/${tx.signature}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="p-1 hover:bg-zinc-800 rounded transition shrink-0"
-        >
-          <ExternalLink className="w-3.5 h-3.5 text-zinc-600" />
-        </a>
-      )}
-    </div>
+      <span className={`text-sm tabular-nums font-mono ${isSend ? "text-zinc-400" : "text-[#00e5a0]"}`}>
+        {isSend ? "-" : "+"}{amount.toFixed(4)}
+      </span>
+    </a>
   );
 }
