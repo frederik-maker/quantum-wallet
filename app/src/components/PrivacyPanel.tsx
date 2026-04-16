@@ -5,7 +5,10 @@ import { motion } from "framer-motion";
 import { useWalletStore } from "@/lib/wallet-store";
 
 export function PrivacyPanel() {
-  const { network, rpcUrl, feePayerSecret, umbraRegistered, magicblockEnabled, setUmbraRegistered, setMagicblockEnabled } = useWalletStore();
+  const { network, rpcUrl, feePayerSecret, umbraRegistered: umbraRegisteredMap, magicblockEnabled: magicblockEnabledMap, setUmbraRegistered, setMagicblockEnabled } = useWalletStore();
+  const umbraRegistered = umbraRegisteredMap[network] ?? false;
+  const magicblockEnabled = magicblockEnabledMap[network] ?? false;
+  const networkLabel = network === "mainnet-beta" ? "mainnet" : network;
   const [umbraRegistering, setUmbraRegistering] = useState(false);
   const [umbraError, setUmbraError] = useState<string | null>(null);
   const [magicblockChecking, setMagicblockChecking] = useState(false);
@@ -101,7 +104,7 @@ export function PrivacyPanel() {
         ) : (
           <motion.button onClick={handleUmbraRegister} whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }}
             className="btn-purple-soft w-full py-2.5 rounded-xl text-[13px] font-medium"
-          >Register for private transfers</motion.button>
+          >Register for private transfers on {networkLabel}</motion.button>
         )}
       </div>
 

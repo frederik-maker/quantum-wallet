@@ -5,7 +5,10 @@ import { motion } from "framer-motion";
 import { useWalletStore } from "@/lib/wallet-store";
 
 export function CrossChainPanel() {
-  const { ikaEnabled, dwalletAddress, dwalletBtcAddress, setIkaEnabled } = useWalletStore();
+  const { network, ikaEnabled: ikaEnabledMap, dwalletAddress: dwalletAddressMap, dwalletBtcAddress: dwalletBtcAddressMap, setIkaEnabled } = useWalletStore();
+  const ikaEnabled = ikaEnabledMap[network] ?? false;
+  const dwalletAddress = dwalletAddressMap[network] ?? null;
+  const dwalletBtcAddress = dwalletBtcAddressMap[network] ?? null;
   const [connecting, setConnecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [signTarget, setSignTarget] = useState("");

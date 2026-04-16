@@ -70,14 +70,14 @@ interface WalletState {
   feePayerBalance: number; // Fee payer balance in lamports
   _hasHydrated: boolean; // True after Zustand rehydrates from localStorage
 
-  // Privacy feature state (persisted)
-  umbraRegistered: boolean;
-  magicblockEnabled: boolean;
+  // Privacy feature state (persisted, per-network — each network has separate program IDs)
+  umbraRegistered: Record<string, boolean>;
+  magicblockEnabled: Record<string, boolean>;
 
-  // Cross-chain / Ika state (persisted)
-  ikaEnabled: boolean;
-  dwalletAddress: string | null; // Base58 dWallet address on Ika
-  dwalletBtcAddress: string | null; // Bitcoin address derived from dWallet
+  // Cross-chain / Ika state (persisted, per-network)
+  ikaEnabled: Record<string, boolean>;
+  dwalletAddress: Record<string, string | null>; // Base58 dWallet address on Ika
+  dwalletBtcAddress: Record<string, string | null>; // Bitcoin address derived from dWallet
 
   // Actions
   initializeWallet: (name: string) => Promise<void>;
@@ -126,14 +126,14 @@ export const useWalletStore = create<WalletState>()(
       totalBalance: 0,
       feePayerBalance: 0,
       _hasHydrated: false,
-      umbraRegistered: false,
-      magicblockEnabled: false,
-      ikaEnabled: false,
-      dwalletAddress: null,
-      dwalletBtcAddress: null,
+      umbraRegistered: {},
+      magicblockEnabled: {},
+      ikaEnabled: {},
+      dwalletAddress: {},
+      dwalletBtcAddress: {},
 
       setUmbraRegistered: (registered) => set((s) => ({
-        umbraRegistered: registered,
+        umbraRegistered: { ...s.umbraRegistered, [s.network]: registered },
         ...(registered ? {
           history: [...s.history, {
             id: `umbra-${Date.now()}`,
@@ -145,7 +145,7 @@ export const useWalletStore = create<WalletState>()(
         } : {}),
       })),
       setMagicblockEnabled: (enabled) => set((s) => ({
-        magicblockEnabled: enabled,
+        magicblockEnabled: { ...s.magicblockEnabled, [s.network]: enabled },
         ...(enabled ? {
           history: [...s.history, {
             id: `magicblock-${Date.now()}`,
@@ -157,9 +157,9 @@ export const useWalletStore = create<WalletState>()(
         } : {}),
       })),
       setIkaEnabled: (enabled, dwalletAddr, btcAddr) => set((s) => ({
-        ikaEnabled: enabled,
-        dwalletAddress: dwalletAddr ?? s.dwalletAddress,
-        dwalletBtcAddress: btcAddr ?? s.dwalletBtcAddress,
+        ikaEnabled: { ...s.ikaEnabled, [s.network]: enabled },
+        dwalletAddress: { ...s.dwalletAddress, [s.network]: dwalletAddr ?? s.dwalletAddress[s.network] ?? null },
+        dwalletBtcAddress: { ...s.dwalletBtcAddress, [s.network]: btcAddr ?? s.dwalletBtcAddress[s.network] ?? null },
         ...(enabled ? {
           history: [...s.history, {
             id: `ika-${Date.now()}`,
@@ -819,11 +819,11 @@ export const useWalletStore = create<WalletState>()(
           error: null,
           totalBalance: 0,
       feePayerBalance: 0,
-          umbraRegistered: false,
-          magicblockEnabled: false,
-          ikaEnabled: false,
-          dwalletAddress: null,
-          dwalletBtcAddress: null,
+          umbraRegistered: {},
+          magicblockEnabled: {},
+          ikaEnabled: {},
+          dwalletAddress: {},
+          dwalletBtcAddress: {},
         });
       },
     }),
@@ -857,7 +857,26 @@ export const useWalletStore = create<WalletState>()(
                 : net === "localnet"
                 ? "http://localhost:8899"
                 : "https://api.devnet.solana.com";
-            useWalletStore.setState({ rpcUrl, _hasHydrated: true });
+
+            // Migrate legacy per-network flags (boolean -> Record<network, boolean>).
+            // Legacy scalars are ambiguous — we can't tell which network they applied to
+            // since the user may have switched networks before persisting. Reset to empty
+            // and let the user re-activate on the network they're actually using.
+            const migrateRecord = <T>(val: unknown): Record<string, T> => {
+              if (val && typeof val === "object" && !Array.isArray(val)) {
+                return val as Record<string, T>;
+              }
+              return {};
+            };
+            const migrated = {
+              umbraRegistered: migrateRecord<boolean>(state.umbraRegistered),
+              magicblockEnabled: migrateRecord<boolean>(state.magicblockEnabled),
+              ikaEnabled: migrateRecord<boolean>(state.ikaEnabled),
+              dwalletAddress: migrateRecord<string | null>(state.dwalletAddress),
+              dwalletBtcAddress: migrateRecord<string | null>(state.dwalletBtcAddress),
+            };
+
+            useWalletStore.setState({ rpcUrl, _hasHydrated: true, ...migrated });
             // Refresh balances in background
             setTimeout(() => useWalletStore.getState().refreshBalances(), 100);
           } else {
