@@ -4,6 +4,7 @@ pub enum VaultInstructions {
     OpenVault,
     SplitVault,
     CloseVault,
+    ApproveCrossChain,
 }
 
 impl TryFrom<&u8> for VaultInstructions {
@@ -14,6 +15,7 @@ impl TryFrom<&u8> for VaultInstructions {
             0 => Ok(Self::OpenVault),
             1 => Ok(Self::SplitVault),
             2 => Ok(Self::CloseVault),
+            3 => Ok(Self::ApproveCrossChain),
             _ => Err(ProgramError::InvalidInstructionData),
         }
     }

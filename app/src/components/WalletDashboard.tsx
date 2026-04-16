@@ -8,10 +8,11 @@ import { SendModal } from "./SendModal";
 import { ReceiveModal } from "./ReceiveModal";
 import { MigrateModal } from "./MigrateModal";
 import { PrivacyPanel } from "./PrivacyPanel";
+import { CrossChainPanel } from "./CrossChainPanel";
 import { LAMPORTS_PER_SOL } from "@/lib/constants";
 import { Keypair } from "@solana/web3.js";
 
-type Tab = "overview" | "privacy" | "activity";
+type Tab = "overview" | "privacy" | "cross-chain" | "activity";
 
 const TX_LABELS: Record<string, string> = {
   open: "Vault created",
@@ -23,6 +24,8 @@ const TX_LABELS: Record<string, string> = {
   migrate: "Migrated",
   umbra_register: "Umbra activated",
   magicblock_connect: "MagicBlock connected",
+  ika_connect: "Ika dWallet created",
+  cross_chain_sign: "Cross-chain sign",
 };
 
 interface WalletDashboardProps {
@@ -38,7 +41,7 @@ export function WalletDashboard({ onViewHome }: WalletDashboardProps) {
   const [modal, setModal] = useState<"send" | "receive" | "migrate" | null>(null);
   const [tab, setTab] = useState<Tab>("overview");
   const [tabLine, setTabLine] = useState({ left: 0, width: 0 });
-  const tabRefs = useRef<Record<Tab, HTMLButtonElement | null>>({ overview: null, privacy: null, activity: null });
+  const tabRefs = useRef<Record<Tab, HTMLButtonElement | null>>({ overview: null, privacy: null, "cross-chain": null, activity: null });
   const [settings, setSettings] = useState(false);
   const [copied, setCopied] = useState(false);
   const [keyCopied, setKeyCopied] = useState(false);
@@ -242,7 +245,7 @@ export function WalletDashboard({ onViewHome }: WalletDashboardProps) {
 
         {/* ── Tabs ── */}
         <div className="relative flex gap-8 border-b border-white/[0.04] mb-8">
-          {(["overview", "privacy", "activity"] as Tab[]).map((t) => (
+          {(["overview", "privacy", "cross-chain", "activity"] as Tab[]).map((t) => (
             <button
               key={t}
               ref={(el) => { tabRefs.current[t] = el; }}
@@ -424,6 +427,12 @@ export function WalletDashboard({ onViewHome }: WalletDashboardProps) {
             </motion.div>
           )}
 
+          {tab === "cross-chain" && (
+            <motion.div key="x" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.2 }}>
+              <CrossChainPanel />
+            </motion.div>
+          )}
+
           {tab === "activity" && (
             <motion.div key="a" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.2 }}>
               <Activity history={recent} explorer={explorer} clusterParam={clusterParam} />
@@ -564,6 +573,14 @@ const TX_ICONS: Record<string, { icon: React.ReactNode; bg: string; color: strin
   magicblock_connect: {
     icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" /></svg>,
     bg: "bg-cyan-500/[0.08]", color: "text-cyan-400",
+  },
+  ika_connect: {
+    icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="12" r="10" /><path d="M2 12h20" /><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z" /></svg>,
+    bg: "bg-cyan-500/[0.08]", color: "text-cyan-400",
+  },
+  cross_chain_sign: {
+    icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M12 2L3 7v10l9 5 9-5V7l-9-5z" /><path d="M12 22V12" opacity="0.5" /><path d="M3 7l9 5 9-5" opacity="0.5" /></svg>,
+    bg: "bg-amber-500/[0.08]", color: "text-amber-400",
   },
 };
 

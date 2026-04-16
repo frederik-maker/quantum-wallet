@@ -37,7 +37,7 @@ export interface VaultEntry {
 /** Transaction history entry */
 export interface TxHistoryEntry {
   id: string;
-  type: "send" | "receive" | "migrate" | "open" | "close" | "fund" | "umbra_register" | "magicblock_connect";
+  type: "send" | "receive" | "migrate" | "open" | "close" | "fund" | "umbra_register" | "magicblock_connect" | "ika_connect" | "cross_chain_sign";
   amount: number; // Lamports
   counterparty?: string; // Address
   signature?: string; // Solana tx signature
@@ -74,11 +74,17 @@ interface WalletState {
   umbraRegistered: boolean;
   magicblockEnabled: boolean;
 
+  // Cross-chain / Ika state (persisted)
+  ikaEnabled: boolean;
+  dwalletAddress: string | null; // Base58 dWallet address on Ika
+  dwalletBtcAddress: string | null; // Bitcoin address derived from dWallet
+
   // Actions
   initializeWallet: (name: string) => Promise<void>;
   setNetwork: (network: "devnet" | "mainnet-beta" | "testnet" | "localnet") => void;
   setUmbraRegistered: (registered: boolean) => void;
   setMagicblockEnabled: (enabled: boolean) => void;
+  setIkaEnabled: (enabled: boolean, dwalletAddress?: string, btcAddress?: string) => void;
   refreshBalances: () => Promise<void>;
   sendSol: (recipient: string, amountLamports: number) => Promise<string>;
   getReceiveAddress: () => string | null;
@@ -122,6 +128,9 @@ export const useWalletStore = create<WalletState>()(
       _hasHydrated: false,
       umbraRegistered: false,
       magicblockEnabled: false,
+      ikaEnabled: false,
+      dwalletAddress: null,
+      dwalletBtcAddress: null,
 
       setUmbraRegistered: (registered) => set((s) => ({
         umbraRegistered: registered,
@@ -141,6 +150,20 @@ export const useWalletStore = create<WalletState>()(
           history: [...s.history, {
             id: `magicblock-${Date.now()}`,
             type: "magicblock_connect" as const,
+            amount: 0,
+            timestamp: Date.now(),
+            status: "confirmed" as const,
+          }],
+        } : {}),
+      })),
+      setIkaEnabled: (enabled, dwalletAddr, btcAddr) => set((s) => ({
+        ikaEnabled: enabled,
+        dwalletAddress: dwalletAddr ?? s.dwalletAddress,
+        dwalletBtcAddress: btcAddr ?? s.dwalletBtcAddress,
+        ...(enabled ? {
+          history: [...s.history, {
+            id: `ika-${Date.now()}`,
+            type: "ika_connect" as const,
             amount: 0,
             timestamp: Date.now(),
             status: "confirmed" as const,
@@ -798,6 +821,9 @@ export const useWalletStore = create<WalletState>()(
       feePayerBalance: 0,
           umbraRegistered: false,
           magicblockEnabled: false,
+          ikaEnabled: false,
+          dwalletAddress: null,
+          dwalletBtcAddress: null,
         });
       },
     }),
@@ -813,6 +839,9 @@ export const useWalletStore = create<WalletState>()(
         history: state.history,
         umbraRegistered: state.umbraRegistered,
         magicblockEnabled: state.magicblockEnabled,
+        ikaEnabled: state.ikaEnabled,
+        dwalletAddress: state.dwalletAddress,
+        dwalletBtcAddress: state.dwalletBtcAddress,
       }),
       onRehydrateStorage: () => (state) => {
         // useWalletStore is not yet assigned during create(), so defer setState

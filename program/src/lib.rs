@@ -29,5 +29,6 @@ fn process_instruction(
         VaultInstructions::SplitVault => SplitVault::deserialize(data)?.process(accounts),
         VaultInstructions::OpenVault => OpenVault::deserialize(data)?.process(accounts),
         VaultInstructions::CloseVault => CloseVault::deserialize(data)?.process(accounts),
+        VaultInstructions::ApproveCrossChain => ApproveCrossChain::deserialize(data)?.process(accounts),
     }
 }

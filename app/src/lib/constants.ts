@@ -16,6 +16,7 @@ export enum VaultInstruction {
   OpenVault = 0,
   SplitVault = 1,
   CloseVault = 2,
+  ApproveCrossChain = 3,
 }
 
 // Solana constraints
@@ -33,3 +34,18 @@ export const RPC_ENDPOINTS: Record<string, string> = {
 // Umbra program IDs
 export const UMBRA_PROGRAM_ID_MAINNET = "UMBRAD2ishebJTcgCLkTkNUx1v3GyoAgpTRPeWoLykh";
 export const UMBRA_PROGRAM_ID_DEVNET = "DSuKkyqGVGgo4QtPABfxKJKygUDACbUhirnuv63mEpAJ";
+
+// Ika dWallet
+export const IKA_PROGRAM_ID = new PublicKey(
+  "87W54kGYFQ1rgWqMeu4XTPHWXWmXSQCcjm8vCTfiq1oY"
+);
+export const IKA_GRPC_ENDPOINT = "https://pre-alpha-dev-1.ika.ika-network.net:443";
+export const CPI_AUTHORITY_SEED = "__ika_cpi_authority";
+
+// Ika signature schemes (u16)
+export enum DWalletSignatureScheme {
+  EcdsaSecp256k1 = 0,
+  EcdsaSha256 = 1,
+  EcdsaDoubleSha256 = 2, // Bitcoin BIP143
+  TaprootSha256 = 3,     // Bitcoin Taproot
+}

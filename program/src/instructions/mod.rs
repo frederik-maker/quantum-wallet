@@ -7,5 +7,8 @@ pub use close_vault::*;
 pub mod split_vault;
 pub use split_vault::*;
 
+pub mod approve_cross_chain;
+pub use approve_cross_chain::*;
+
 pub mod vault_instructions;
 pub use vault_instructions::*;
