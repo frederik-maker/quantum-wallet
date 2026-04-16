@@ -113,7 +113,7 @@ export function WalletDashboard({ onViewHome }: WalletDashboardProps) {
             <QuantumShield status={loading ? "rotating" : !_hasHydrated ? "rotating" : isSetUp ? "protected" : "vulnerable"} />
           </div>
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1.5 text-[11px] font-mono text-zinc-500">
+            <div className="flex items-center gap-1.5 text-[12px] font-mono text-zinc-400">
               <div className={`w-1.5 h-1.5 rounded-full ${network === "mainnet-beta" ? "bg-[#00e5a0]" : "bg-amber-400"}`} />
               <select
                 value={network}
@@ -193,19 +193,19 @@ export function WalletDashboard({ onViewHome }: WalletDashboardProps) {
 
             {/* Status subtitle */}
             {isSetUp && spent.length > 0 && (
-              <p className="mt-4 text-[10px] text-[#00e5a0]/40 font-mono tracking-wide">
+              <p className="mt-4 text-[11px] text-[#00e5a0]/60 font-mono tracking-wide">
                 {spent.length} key rotation{spent.length !== 1 ? "s" : ""} completed
               </p>
             )}
             {_hasHydrated && !isSetUp && addr && (
-              <p className="mt-4 text-[11px] text-zinc-500">
+              <p className="mt-4 text-[12px] text-zinc-400">
                 {feePayerBalance > 0
                   ? `${(feePayerBalance / LAMPORTS_PER_SOL).toFixed(4)} SOL available — create a vault to protect it`
                   : "Fund this address to get started"}
               </p>
             )}
             {isSetUp && active.length > 0 && spent.length === 0 && (
-              <p className="mt-4 text-[10px] text-[#00e5a0]/40 font-mono tracking-wide">
+              <p className="mt-4 text-[11px] text-[#00e5a0]/60 font-mono tracking-wide">
                 {active.length} vault{active.length !== 1 ? "s" : ""} · quantum-safe
               </p>
             )}
@@ -280,13 +280,13 @@ export function WalletDashboard({ onViewHome }: WalletDashboardProps) {
                     </div>
                     <div>
                       <p className="text-[15px] font-semibold text-white" style={{ letterSpacing: "-0.01em" }}>Set up your vault</p>
-                      <p className="text-[12px] text-zinc-500 mt-0.5">Quantum-safe key rotation for every transaction</p>
+                      <p className="text-[13px] text-zinc-400 mt-0.5">Quantum-safe key rotation for every transaction</p>
                     </div>
                   </div>
 
                   {/* Compact explanation */}
-                  <p className="text-[12px] text-zinc-500 leading-relaxed mb-4">
-                    Standard wallets reuse keys forever — vulnerable to quantum attacks. A vault uses <span className="text-zinc-300">one-time keys</span> that are destroyed and replaced after every send, so there&apos;s nothing to crack.
+                  <p className="text-[13px] text-zinc-400 leading-relaxed mb-4">
+                    Standard wallets reuse keys forever — vulnerable to quantum attacks. A vault uses <span className="text-zinc-200">one-time keys</span> that are destroyed and replaced after every send, so there&apos;s nothing to crack.
                   </p>
 
                   {/* Visual step indicators */}
@@ -297,9 +297,9 @@ export function WalletDashboard({ onViewHome }: WalletDashboardProps) {
                       { n: "3", label: "Protect", desc: "Auto-rotate keys" },
                     ].map((s) => (
                       <div key={s.n} className="rounded-xl bg-white/[0.02] border border-white/[0.04] p-3 text-center">
-                        <span className="text-[10px] font-mono text-[#00e5a0]/50">{s.n}</span>
-                        <p className="text-[11px] text-zinc-300 font-medium mt-1">{s.label}</p>
-                        <p className="text-[9px] text-zinc-600 mt-0.5">{s.desc}</p>
+                        <span className="text-[11px] font-mono text-[#00e5a0]/60">{s.n}</span>
+                        <p className="text-[12px] text-zinc-200 font-medium mt-1">{s.label}</p>
+                        <p className="text-[11px] text-zinc-500 mt-0.5">{s.desc}</p>
                       </div>
                     ))}
                   </div>
@@ -343,31 +343,31 @@ export function WalletDashboard({ onViewHome }: WalletDashboardProps) {
                           : "Airdrop 1 SOL"}
                       </motion.button>
                       {airdropMsg && (
-                        <p className={`text-[11px] ${airdropMsg.includes("received") ? "text-[#00e5a0]/70" : "text-red-400/60"}`}>{airdropMsg}</p>
+                        <p className={`text-[12px] ${airdropMsg.includes("received") ? "text-[#00e5a0]/80" : "text-red-400/70"}`}>{airdropMsg}</p>
                       )}
 
                       {/* Faucet links */}
                       <div className="flex items-center gap-2">
                         <a href={`https://faucet.solana.com/?recipient=${feePayerAddr}`} target="_blank" rel="noopener noreferrer"
-                          className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-white/[0.02] border border-white/[0.04] hover:bg-white/[0.04] hover:border-white/[0.07] transition-all text-[11px] text-zinc-500 hover:text-zinc-300"
+                          className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-white/[0.02] border border-white/[0.04] hover:bg-white/[0.04] hover:border-white/[0.07] transition-all text-[12px] text-zinc-400 hover:text-zinc-200"
                         >
-                          Solana Faucet <span className="text-zinc-600">&rarr;</span>
+                          Solana Faucet <span className="text-zinc-500">&rarr;</span>
                         </a>
                         <a href={`https://faucet.quicknode.com/solana/devnet`} target="_blank" rel="noopener noreferrer"
-                          className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-white/[0.02] border border-white/[0.04] hover:bg-white/[0.04] hover:border-white/[0.07] transition-all text-[11px] text-zinc-500 hover:text-zinc-300"
+                          className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-white/[0.02] border border-white/[0.04] hover:bg-white/[0.04] hover:border-white/[0.07] transition-all text-[12px] text-zinc-400 hover:text-zinc-200"
                         >
-                          QuickNode <span className="text-zinc-600">&rarr;</span>
+                          QuickNode <span className="text-zinc-500">&rarr;</span>
                         </a>
                       </div>
                       {/* CLI fallback */}
                       <button
                         onClick={() => { navigator.clipboard.writeText(`solana airdrop 2 ${feePayerAddr} --url devnet`); setCopied(true); setTimeout(() => setCopied(false), 2000); }}
-                        className="w-full text-left px-3 py-2 rounded-xl bg-white/[0.015] border border-white/[0.03] hover:bg-white/[0.03] transition-all group"
+                        className="w-full text-left px-3 py-2.5 rounded-xl bg-white/[0.015] border border-white/[0.03] hover:bg-white/[0.03] transition-all group"
                       >
-                        <code className="text-[10px] text-zinc-600 font-mono break-all leading-relaxed group-hover:text-zinc-400 transition-colors">
+                        <code className="text-[11px] text-zinc-500 font-mono break-all leading-relaxed group-hover:text-zinc-300 transition-colors">
                           solana airdrop 2 {feePayerAddr} --url devnet
                         </code>
-                        <span className="block text-[10px] text-zinc-600 mt-0.5">{copied ? "copied ✓" : "copy CLI command"}</span>
+                        <span className="block text-[11px] text-zinc-500 mt-0.5">{copied ? "copied ✓" : "copy CLI command"}</span>
                       </button>
                     </div>
                   )}
@@ -398,7 +398,7 @@ export function WalletDashboard({ onViewHome }: WalletDashboardProps) {
 
               {/* How it works */}
               <div className="card-highlight card-shine p-5 mb-4">
-                <p className="text-[13px] font-semibold text-zinc-200 mb-4" style={{ letterSpacing: "-0.01em" }}>How it works</p>
+                <p className="text-[14px] font-semibold text-zinc-200 mb-4" style={{ letterSpacing: "-0.01em" }}>How it works</p>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   {[
                     { icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#00e5a0" strokeWidth="2" strokeLinecap="round"><path d="M12 2L3 7v10l9 5 9-5V7l-9-5z" /></svg>, label: "Migrate", desc: "Import from Phantom, Solflare, or any wallet", color: "text-[#00e5a0]", bg: "bg-[#00e5a0]/[0.05]" },
@@ -409,8 +409,8 @@ export function WalletDashboard({ onViewHome }: WalletDashboardProps) {
                       <div className={`w-7 h-7 rounded-lg ${f.bg} flex items-center justify-center mb-2.5`}>
                         <span className={f.color}>{f.icon}</span>
                       </div>
-                      <p className={`text-[12px] font-medium ${f.color} mb-0.5`}>{f.label}</p>
-                      <p className="text-[10px] text-zinc-500 leading-relaxed">{f.desc}</p>
+                      <p className={`text-[13px] font-medium ${f.color} mb-0.5`}>{f.label}</p>
+                      <p className="text-[12px] text-zinc-400 leading-relaxed">{f.desc}</p>
                     </div>
                   ))}
                 </div>
@@ -446,11 +446,11 @@ export function WalletDashboard({ onViewHome }: WalletDashboardProps) {
             <div className="w-4 h-4 rounded bg-[#00e5a0]/[0.06] flex items-center justify-center">
               <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#00e5a0" strokeWidth="2.5"><path d="M12 2L3 7v10l9 5 9-5V7l-9-5z" /></svg>
             </div>
-            <p className="text-[10px] text-zinc-600 font-mono">Quantum Vault</p>
+            <p className="text-[11px] text-zinc-500 font-mono">Quantum Vault</p>
           </div>
-          <a href="https://github.com/frederik-maker/quantum-wallet" target="_blank" rel="noopener noreferrer" className="text-[10px] text-zinc-600 hover:text-zinc-400 transition-colors font-mono">GitHub &rarr;</a>
+          <a href="https://github.com/frederik-maker/quantum-wallet" target="_blank" rel="noopener noreferrer" className="text-[11px] text-zinc-500 hover:text-zinc-300 transition-colors font-mono">GitHub &rarr;</a>
         </div>
-        <p className="mt-4 text-[10px] text-zinc-600 leading-relaxed text-center">Unaudited hackathon project. Not for production use. Assume any real funds sent will be lost.</p>
+        <p className="mt-4 text-[11px] text-zinc-500 leading-relaxed text-center">Unaudited hackathon project. Not for production use. Assume any real funds sent will be lost.</p>
       </motion.main>
 
       {/* Modals */}
@@ -471,7 +471,7 @@ function VaultList({ vaults, explorer, clusterParam }: { vaults: { id: string; a
   return (
     <div className="card-subtle p-4">
       <button onClick={() => setOpen(!open)} className="w-full flex items-center justify-between group">
-        <span className="text-[11px] text-zinc-500 font-mono group-hover:text-zinc-400 transition-colors">
+        <span className="text-[12px] text-zinc-400 font-mono group-hover:text-zinc-300 transition-colors">
           {vaults.length} vault{vaults.length !== 1 ? "s" : ""}
         </span>
         <motion.svg animate={{ rotate: open ? 180 : 0 }} transition={{ type: "spring", stiffness: 300, damping: 25 }} width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-zinc-500"><path d="M6 9l6 6 6-6" /></motion.svg>
@@ -484,8 +484,8 @@ function VaultList({ vaults, explorer, clusterParam }: { vaults: { id: string; a
                 <a key={v.id} href={`${explorer}/address/${v.address}${clusterParam}`} target="_blank" rel="noopener noreferrer"
                   className="flex items-center justify-between py-2 px-2 -mx-2 rounded-lg hover:bg-white/[0.02] transition-colors group"
                 >
-                  <code className="text-[10px] text-zinc-500 font-mono group-hover:text-zinc-400 transition-colors truncate max-w-[200px]">{v.address.slice(0, 10)}...{v.address.slice(-6)}</code>
-                  <span className="text-[10px] text-zinc-500 font-mono tabular-nums">{(v.balance / LAMPORTS_PER_SOL).toFixed(4)}</span>
+                  <code className="text-[12px] text-zinc-400 font-mono group-hover:text-zinc-300 transition-colors truncate max-w-[200px]">{v.address.slice(0, 10)}...{v.address.slice(-6)}</code>
+                  <span className="text-[12px] text-zinc-400 font-mono tabular-nums">{(v.balance / LAMPORTS_PER_SOL).toFixed(4)}</span>
                 </a>
               ))}
             </div>
@@ -512,8 +512,8 @@ function Activity({ history, explorer, clusterParam }: { history: TxHistoryEntry
               </div>
             </div>
           </div>
-          <p className="text-[14px] text-zinc-400 font-medium mb-1.5">No activity yet</p>
-          <p className="text-[12px] text-zinc-600 max-w-[240px] mx-auto leading-relaxed">
+          <p className="text-[15px] text-zinc-300 font-medium mb-1.5">No activity yet</p>
+          <p className="text-[13px] text-zinc-500 max-w-[260px] mx-auto leading-relaxed">
             Transactions will appear here after your first vault creation or transfer.
           </p>
         </div>
@@ -523,7 +523,7 @@ function Activity({ history, explorer, clusterParam }: { history: TxHistoryEntry
   return (
     <div className="rounded-xl bg-white/[0.015] border border-white/[0.04] overflow-hidden">
       <div className="px-4 py-3 border-b border-white/[0.04]">
-        <p className="text-[11px] font-mono text-zinc-500 uppercase tracking-[0.15em]">{history.length} transaction{history.length !== 1 ? "s" : ""}</p>
+        <p className="text-[12px] font-mono text-zinc-400 uppercase tracking-[0.15em]">{history.length} transaction{history.length !== 1 ? "s" : ""}</p>
       </div>
       <div className="px-4">
         {history.map((tx, i) => (
@@ -599,18 +599,18 @@ function TxRow({ tx, explorer, clusterParam }: { tx: TxHistoryEntry; explorer: s
         <span className={color}>{icon}</span>
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-[13px] text-zinc-300 font-medium">{TX_LABELS[tx.type] || tx.type}</p>
-        <p className="text-[10px] text-zinc-600 font-mono">{date} · {time}</p>
+        <p className="text-[13px] text-zinc-200 font-medium">{TX_LABELS[tx.type] || tx.type}</p>
+        <p className="text-[11px] text-zinc-500 font-mono">{date} · {time}</p>
       </div>
       {amt > 0 ? (
         <div className="text-right">
           <span className={`text-[13px] tabular-nums font-mono font-medium ${isSend ? "text-zinc-400" : "text-[#00e5a0]"}`}>
             {isSend ? "-" : "+"}{amt.toFixed(4)}
           </span>
-          <p className="text-[10px] text-zinc-600 font-mono">SOL</p>
+          <p className="text-[11px] text-zinc-500 font-mono">SOL</p>
         </div>
       ) : (
-        <span className="text-[10px] text-zinc-500 font-mono px-2 py-0.5 rounded-md bg-white/[0.03] border border-white/[0.04]">{tx.status}</span>
+        <span className="text-[11px] text-zinc-400 font-mono px-2 py-0.5 rounded-md bg-white/[0.03] border border-white/[0.04]">{tx.status}</span>
       )}
     </div>
   );
@@ -701,7 +701,7 @@ function SettingsModal({ walletName, network, feePayerSecret, feePayerAddr, vaul
                 <p className="text-[14px] font-semibold text-white">{walletName}</p>
                 <div className="flex items-center gap-2 mt-0.5">
                   <div className={`w-1.5 h-1.5 rounded-full ${network === "mainnet-beta" ? "bg-[#00e5a0]" : "bg-amber-400"}`} />
-                  <p className="text-[11px] text-zinc-500 font-mono">{network}{feePayerAddr && ` · ${feePayerAddr.slice(0,6)}...${feePayerAddr.slice(-4)}`}</p>
+                  <p className="text-[12px] text-zinc-400 font-mono">{network}{feePayerAddr && ` · ${feePayerAddr.slice(0,6)}...${feePayerAddr.slice(-4)}`}</p>
                 </div>
               </div>
             </div>
@@ -713,13 +713,13 @@ function SettingsModal({ walletName, network, feePayerSecret, feePayerAddr, vaul
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-zinc-500"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" /></svg>
               <p className="text-[12px] text-zinc-400 font-medium">Export backup</p>
             </div>
-            <p className="text-[11px] text-zinc-500 leading-relaxed mb-3">
-              Your wallet has two key types: <span className="text-zinc-400">Ed25519 fee payer</span> (signs txs) and <span className="text-zinc-400">W-OTS vault keys</span> (quantum-safe). You need both to restore.
+            <p className="text-[12px] text-zinc-400 leading-relaxed mb-3">
+              Your wallet has two key types: <span className="text-zinc-200">Ed25519 fee payer</span> (signs txs) and <span className="text-zinc-200">W-OTS vault keys</span> (quantum-safe). You need both to restore.
             </p>
             {vaults.length === 0 && (
               <div className="flex items-start gap-2 rounded-xl bg-amber-500/[0.04] border border-amber-500/[0.08] px-3 py-2.5 mb-3">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-amber-400/70 mt-0.5 shrink-0"><circle cx="12" cy="12" r="10" /><path d="M12 8v4M12 16h.01" /></svg>
-                <p className="text-[11px] text-amber-400/70">No vaults yet — backup will only contain the Ed25519 fee payer.</p>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-amber-400/80 mt-0.5 shrink-0"><circle cx="12" cy="12" r="10" /><path d="M12 8v4M12 16h.01" /></svg>
+                <p className="text-[12px] text-amber-400/80">No vaults yet — backup will only contain the Ed25519 fee payer.</p>
               </div>
             )}
             <motion.button onClick={exportFullBackup} whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }}
@@ -732,7 +732,7 @@ function SettingsModal({ walletName, network, feePayerSecret, feePayerAddr, vaul
                 </span>
               ) : "Copy full backup"}
             </motion.button>
-            <p className="text-[10px] text-red-400/40 mt-2 flex items-center gap-1.5">
+            <p className="text-[11px] text-red-400/60 mt-2 flex items-center gap-1.5">
               <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0110 0v4" /></svg>
               Never share this with anyone. Store offline.
             </p>
@@ -754,10 +754,10 @@ function SettingsModal({ walletName, network, feePayerSecret, feePayerAddr, vaul
                   <div className="flex-1">
                     <p className="text-[12px] text-zinc-300 font-medium">Fee payer</p>
                   </div>
-                  <span className="text-[9px] font-mono text-zinc-600 px-1.5 py-0.5 rounded-md bg-white/[0.03] border border-white/[0.04]">Ed25519 · 64B</span>
+                  <span className="text-[10px] font-mono text-zinc-500 px-1.5 py-0.5 rounded-md bg-white/[0.03] border border-white/[0.04]">Ed25519 · 64B</span>
                 </div>
                 {feePayerAddr && (
-                  <p className="text-[10px] text-zinc-600 font-mono break-all pl-[34px]">{feePayerAddr}</p>
+                  <p className="text-[11px] text-zinc-500 font-mono break-all pl-[34px]">{feePayerAddr}</p>
                 )}
               </div>
               <div className="rounded-xl bg-[#00e5a0]/[0.015] border border-[#00e5a0]/[0.06] p-3.5 hover:bg-[#00e5a0]/[0.025] hover:border-[#00e5a0]/[0.1] transition-all duration-200">
@@ -768,9 +768,9 @@ function SettingsModal({ walletName, network, feePayerSecret, feePayerAddr, vaul
                   <div className="flex-1">
                     <p className="text-[12px] text-zinc-300 font-medium">Vault keys</p>
                   </div>
-                  <span className="text-[9px] font-mono text-[#00e5a0]/50 px-1.5 py-0.5 rounded-md bg-[#00e5a0]/[0.04] border border-[#00e5a0]/[0.06]">W-OTS · ~3KB</span>
+                  <span className="text-[10px] font-mono text-[#00e5a0]/60 px-1.5 py-0.5 rounded-md bg-[#00e5a0]/[0.04] border border-[#00e5a0]/[0.06]">W-OTS · ~3KB</span>
                 </div>
-                <p className="text-[10px] text-zinc-500 pl-[34px]">
+                <p className="text-[11px] text-zinc-400 pl-[34px]">
                   {activeVaults.length === 0
                     ? "No active vaults yet"
                     : `${activeVaults.length} active vault${activeVaults.length > 1 ? "s" : ""} · keys rotate after each send`}

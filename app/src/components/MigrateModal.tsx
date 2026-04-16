@@ -52,7 +52,7 @@ export function MigrateModal({ onClose }: MigrateModalProps) {
             </svg>
           </div>
           <p className="text-lg font-semibold text-white mb-1">Protected</p>
-          <p className="text-sm text-zinc-500 mb-5">Your funds are now quantum-safe.</p>
+          <p className="text-sm text-zinc-400 mb-5">Your funds are now quantum-safe.</p>
           <motion.button
             onClick={onClose}
             whileHover={{ scale: 1.01 }}
@@ -85,8 +85,8 @@ export function MigrateModal({ onClose }: MigrateModalProps) {
                 <div className="w-10 h-10 rounded-xl bg-red-500/[0.06] border border-red-500/[0.1] flex items-center justify-center">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="1.5" strokeLinecap="round"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0110 0v4" /><path d="M4 4l16 16" opacity="0.4" /></svg>
                 </div>
-                <span className="text-[10px] font-mono text-red-400/70">Ed25519</span>
-                <span className="text-[9px] text-zinc-600">vulnerable</span>
+                <span className="text-[11px] font-mono text-red-400/80">Ed25519</span>
+                <span className="text-[10px] text-zinc-500">vulnerable</span>
               </div>
               <div className="flex flex-col items-center gap-0.5 px-2">
                 <div className="flex items-center gap-1">
@@ -96,14 +96,14 @@ export function MigrateModal({ onClose }: MigrateModalProps) {
                   </motion.div>
                   <div className="w-6 h-px bg-gradient-to-r from-[#00e5a0]/30 to-[#00e5a0]/50" />
                 </div>
-                <span className="text-[8px] text-zinc-600 font-mono">migrate</span>
+                <span className="text-[10px] text-zinc-500 font-mono">migrate</span>
               </div>
               <div className="flex flex-col items-center gap-1.5">
                 <div className="w-10 h-10 rounded-xl bg-[#00e5a0]/[0.06] border border-[#00e5a0]/[0.12] flex items-center justify-center shadow-[0_0_16px_rgba(0,229,160,0.06)]">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00e5a0" strokeWidth="1.5"><path d="M12 2L3 7v10l9 5 9-5V7l-9-5z" /><path d="M12 22V12" opacity="0.4" /><path d="M3 7l9 5 9-5" opacity="0.4" /></svg>
                 </div>
-                <span className="text-[10px] font-mono text-[#00e5a0]/70">W-OTS</span>
-                <span className="text-[9px] text-[#00e5a0]/40">quantum-safe</span>
+                <span className="text-[11px] font-mono text-[#00e5a0]/80">W-OTS</span>
+                <span className="text-[10px] text-[#00e5a0]/60">quantum-safe</span>
               </div>
             </motion.div>
 
@@ -112,7 +112,7 @@ export function MigrateModal({ onClose }: MigrateModalProps) {
               className="flex items-start gap-3 bg-red-500/[0.04] border border-red-500/10 rounded-xl p-4"
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-red-400/70 mt-0.5 shrink-0"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" /><path d="M12 9v4M12 17h.01" /></svg>
-              <p className="text-xs text-red-400/80 leading-relaxed">
+              <p className="text-[13px] text-red-400/80 leading-relaxed">
                 <strong className="text-red-400">This is irreversible.</strong>{" "}
                 Funds transfer from your legacy wallet into a quantum-safe vault. The old address will be empty.
               </p>
@@ -120,16 +120,16 @@ export function MigrateModal({ onClose }: MigrateModalProps) {
 
             {/* Secret key input */}
             <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
-              <label className="text-[11px] font-mono text-zinc-500 uppercase tracking-[0.15em] mb-2 block">Secret Key</label>
+              <label className="text-[12px] font-mono text-zinc-400 uppercase tracking-[0.15em] mb-2 block">Secret Key</label>
               <textarea
                 value={secretKey}
                 onChange={(e) => setSecretKey(e.target.value)}
                 placeholder="Base58 or JSON byte array"
                 rows={3}
-                className="w-full bg-transparent border border-zinc-800 focus:border-[#00e5a0]/30 rounded-xl px-4 py-3 text-xs text-white placeholder:text-zinc-500 focus:outline-none transition font-mono resize-none"
+                className="w-full bg-transparent border border-zinc-800 focus:border-[#00e5a0]/30 rounded-xl px-4 py-3 text-[13px] text-white placeholder:text-zinc-500 focus:outline-none transition font-mono resize-none"
               />
-              <p className="text-[10px] text-zinc-500 mt-1.5 flex items-center gap-1.5">
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-zinc-500"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0110 0v4" /></svg>
+              <p className="text-[11px] text-zinc-400 mt-1.5 flex items-center gap-1.5">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-zinc-400"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0110 0v4" /></svg>
                 Processed locally. Never sent anywhere.
               </p>
             </motion.div>
@@ -142,7 +142,7 @@ export function MigrateModal({ onClose }: MigrateModalProps) {
                 onChange={(e) => setConfirmed(e.target.checked)}
                 className="mt-0.5 rounded border-zinc-700 bg-transparent text-[#00e5a0] focus:ring-0 focus:ring-offset-0"
               />
-              <span className="text-xs text-zinc-500 leading-relaxed group-hover:text-zinc-400 transition-colors">
+              <span className="text-[13px] text-zinc-400 leading-relaxed group-hover:text-zinc-300 transition-colors">
                 I understand this transfers all funds to a quantum-safe vault and cannot be undone.
               </span>
             </label>

@@ -73,7 +73,7 @@ export function SendModal({ onClose }: SendModalProps) {
           <p className="text-lg font-semibold text-white mb-1">
             {privateSend ? "Private transfer sent" : "Sent successfully"}
           </p>
-          <p className="text-sm text-zinc-500 mb-5">
+          <p className="text-sm text-zinc-400 mb-5">
             {privateSend
               ? "Shielded via Umbra. Recipient can scan and claim."
               : "Keys rotated to fresh quantum-safe pair."}
@@ -112,7 +112,7 @@ export function SendModal({ onClose }: SendModalProps) {
 
           <div className="space-y-6">
             <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
-              <label className="text-[11px] font-mono text-zinc-500 uppercase tracking-[0.15em] mb-2 block">To</label>
+              <label className="text-[12px] font-mono text-zinc-400 uppercase tracking-[0.15em] mb-2 block">To</label>
               <div className="relative">
                 <input
                   type="text"
@@ -130,8 +130,8 @@ export function SendModal({ onClose }: SendModalProps) {
 
             <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
               <div className="flex items-center justify-between mb-2">
-                <label className="text-[11px] font-mono text-zinc-500 uppercase tracking-[0.15em]">Amount</label>
-                <button onClick={() => setAmount(maxSol.toFixed(4))} className="text-[11px] text-zinc-500 hover:text-[#00e5a0] transition-colors duration-200 font-mono">
+                <label className="text-[12px] font-mono text-zinc-400 uppercase tracking-[0.15em]">Amount</label>
+                <button onClick={() => setAmount(maxSol.toFixed(4))} className="text-[12px] text-zinc-400 hover:text-[#00e5a0] transition-colors duration-200 font-mono">
                   max {maxSol.toFixed(4)}
                 </button>
               </div>
@@ -173,7 +173,7 @@ export function SendModal({ onClose }: SendModalProps) {
                 </div>
                 <div className="text-left">
                   <span className="text-sm text-zinc-400 group-hover:text-zinc-300 transition-colors block">Private send</span>
-                  <span className="text-[10px] text-zinc-500 block">
+                  <span className="text-[11px] text-zinc-500 block">
                     {privateSend ? "Shielded via Umbra ZK proofs" : "Uses standard quantum-safe transfer"}
                   </span>
                 </div>
