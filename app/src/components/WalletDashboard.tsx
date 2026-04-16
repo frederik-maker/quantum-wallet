@@ -250,7 +250,7 @@ export function WalletDashboard({ onViewHome }: WalletDashboardProps) {
               key={t}
               ref={(el) => { tabRefs.current[t] = el; }}
               onClick={() => setTab(t)}
-              className={`pb-3 text-[13px] capitalize transition-colors duration-200 ${tab === t ? "text-white" : "text-zinc-500 hover:text-zinc-400"}`}
+              className={`pb-3 text-[13px] capitalize whitespace-nowrap transition-colors duration-200 ${tab === t ? "text-white" : "text-zinc-500 hover:text-zinc-400"}`}
             >
               {t}
               {t === "activity" && recent.length > 0 && (
@@ -586,12 +586,19 @@ const TX_ICONS: Record<string, { icon: React.ReactNode; bg: string; color: strin
 
 /* ─ Transaction row ─ */
 function TxRow({ tx, explorer, clusterParam }: { tx: TxHistoryEntry; explorer: string; clusterParam: string }) {
-  const amt = tx.amount / LAMPORTS_PER_SOL;
-  const isSend = tx.type === "send";
+  // Cross-chain sign amounts are stored in sats (1e8 per BTC); everything else is lamports (1e9 per SOL).
+  const isCrossChain = tx.type === "cross_chain_sign";
+  const amt = isCrossChain ? tx.amount / 1e8 : tx.amount / LAMPORTS_PER_SOL;
+  const unit = isCrossChain ? "tBTC" : "SOL";
+  const decimals = isCrossChain ? 6 : 4;
+  const isOutflow = tx.type === "send" || tx.type === "cross_chain_sign";
   const url = tx.signature ? `${explorer}/tx/${tx.signature}${clusterParam}` : undefined;
   const { icon, bg, color } = TX_ICONS[tx.type] || TX_ICONS.open;
   const date = new Date(tx.timestamp).toLocaleDateString(undefined, { month: "short", day: "numeric" });
   const time = new Date(tx.timestamp).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+  const cpShort = tx.counterparty
+    ? `${tx.counterparty.slice(0, 4)}…${tx.counterparty.slice(-4)}`
+    : null;
 
   const content = (
     <div className="activity-row group/tx">
@@ -599,18 +606,25 @@ function TxRow({ tx, explorer, clusterParam }: { tx: TxHistoryEntry; explorer: s
         <span className={color}>{icon}</span>
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-[13px] text-zinc-200 font-medium">{TX_LABELS[tx.type] || tx.type}</p>
+        <div className="flex items-center gap-2">
+          <p className="text-[13px] text-zinc-200 font-medium truncate">{TX_LABELS[tx.type] || tx.type}</p>
+          {cpShort && (
+            <span className="text-[11px] text-zinc-500 font-mono whitespace-nowrap">
+              {isOutflow ? "→" : "←"} {cpShort}
+            </span>
+          )}
+        </div>
         <p className="text-[11px] text-zinc-500 font-mono">{date} · {time}</p>
       </div>
       {amt > 0 ? (
-        <div className="text-right">
-          <span className={`text-[13px] tabular-nums font-mono font-medium ${isSend ? "text-zinc-400" : "text-[#00e5a0]"}`}>
-            {isSend ? "-" : "+"}{amt.toFixed(4)}
+        <div className="text-right shrink-0">
+          <span className={`text-[13px] tabular-nums font-mono font-medium ${isOutflow ? "text-zinc-400" : "text-[#00e5a0]"}`}>
+            {isOutflow ? "−" : "+"}{amt.toFixed(decimals)}
           </span>
-          <p className="text-[11px] text-zinc-500 font-mono">SOL</p>
+          <p className="text-[11px] text-zinc-500 font-mono">{unit}</p>
         </div>
       ) : (
-        <span className="text-[11px] text-zinc-400 font-mono px-2 py-0.5 rounded-md bg-white/[0.03] border border-white/[0.04]">{tx.status}</span>
+        <span className="text-[11px] text-zinc-400 font-mono px-2 py-0.5 rounded-md bg-white/[0.03] border border-white/[0.04] whitespace-nowrap shrink-0">{tx.status}</span>
       )}
     </div>
   );

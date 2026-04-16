@@ -174,14 +174,14 @@ export function PrivacyPanel() {
 
 function StatusPill({ active, loading }: { active: boolean; loading?: boolean }) {
   if (loading) {
-    return <span className="text-[9px] font-mono text-amber-400/50 px-2 py-0.5 rounded-full bg-amber-400/[0.04] border border-amber-400/[0.06]">loading</span>;
+    return <span className="text-[9px] font-mono text-amber-400/50 px-2 py-0.5 rounded-full bg-amber-400/[0.04] border border-amber-400/[0.06] whitespace-nowrap shrink-0">loading</span>;
   }
   if (active) {
     return (
-      <span className="flex items-center gap-1.5 text-[9px] font-mono text-[#00e5a0]/60 px-2 py-0.5 rounded-full bg-[#00e5a0]/[0.04] border border-[#00e5a0]/[0.06]">
+      <span className="flex items-center gap-1.5 text-[9px] font-mono text-[#00e5a0]/60 px-2 py-0.5 rounded-full bg-[#00e5a0]/[0.04] border border-[#00e5a0]/[0.06] whitespace-nowrap shrink-0">
         <span className="w-1 h-1 rounded-full bg-[#00e5a0]" /> active
       </span>
     );
   }
-  return <span className="text-[9px] font-mono text-zinc-500 px-2 py-0.5 rounded-full bg-white/[0.02] border border-white/[0.04]">inactive</span>;
+  return <span className="text-[9px] font-mono text-zinc-500 px-2 py-0.5 rounded-full bg-white/[0.02] border border-white/[0.04] whitespace-nowrap shrink-0">inactive</span>;
 }

@@ -93,7 +93,7 @@ export function QuantumShield({ status }: QuantumShieldProps) {
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#00e5a0] opacity-40" />
             <span className="relative inline-flex h-2 w-2 rounded-full bg-[#00e5a0]" />
           </span>
-          <span className="text-[11px] font-semibold font-mono text-[#00e5a0] leading-none">
+          <span className="text-[11px] font-semibold font-mono text-[#00e5a0] leading-none whitespace-nowrap">
             secure
           </span>
         </motion.div>
@@ -106,7 +106,7 @@ export function QuantumShield({ status }: QuantumShieldProps) {
           className="status-badge-amber flex items-center gap-1.5 px-2.5 py-1 rounded-full border"
         >
           <span className="h-3.5 w-3.5 shrink-0 rounded-full border-2 border-amber-400/30 border-t-amber-400 animate-spin" />
-          <span className="text-[11px] font-semibold font-mono text-amber-400 leading-none">
+          <span className="text-[11px] font-semibold font-mono text-amber-400 leading-none whitespace-nowrap">
             syncing
           </span>
         </motion.div>
@@ -119,7 +119,7 @@ export function QuantumShield({ status }: QuantumShieldProps) {
           className="status-badge-neutral flex items-center gap-1.5 px-2.5 py-1 rounded-full border"
         >
           <ShieldBrokenIcon className="text-zinc-500 shrink-0" />
-          <span className="text-[11px] font-medium font-mono text-zinc-500 leading-none">
+          <span className="text-[11px] font-medium font-mono text-zinc-500 leading-none whitespace-nowrap">
             no vault
           </span>
         </motion.div>

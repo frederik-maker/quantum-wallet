@@ -105,7 +105,7 @@ export function CrossChainPanel() {
               <p className="text-[12px] text-zinc-400">Multi-chain addresses from one Solana wallet</p>
             </div>
           </div>
-          <div className={`px-2 py-0.5 rounded-full text-[10px] font-mono ${
+          <div className={`px-2 py-0.5 rounded-full text-[10px] font-mono whitespace-nowrap shrink-0 ${
             ikaEnabled
               ? "bg-cyan-500/[0.08] text-cyan-400 border border-cyan-500/[0.15]"
               : "bg-zinc-800/50 text-zinc-500 border border-zinc-700/30"
@@ -245,17 +245,31 @@ export function CrossChainPanel() {
             <motion.div
               initial={{ opacity: 0, y: 4 }}
               animate={{ opacity: 1, y: 0 }}
-              className="p-3.5 rounded-xl bg-emerald-500/[0.04] border border-emerald-500/[0.10]"
+              transition={{ type: "spring", stiffness: 400, damping: 28 }}
+              className="p-4 rounded-xl bg-emerald-500/[0.04] border border-emerald-500/[0.10]"
             >
-              <p className="text-[12px] text-emerald-400 mb-1">Transaction signed and broadcast</p>
-              <a
-                href={`https://mempool.space/testnet/tx/${signResult}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-[12px] text-cyan-400 font-mono hover:underline truncate block"
-              >
-                {signResult.slice(0, 16)}...{signResult.slice(-8)}
-              </a>
+              <div className="flex items-center gap-2.5 mb-3">
+                <div className="w-6 h-6 rounded-full bg-emerald-500/[0.12] flex items-center justify-center shrink-0">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M20 6L9 17l-5-5" />
+                  </svg>
+                </div>
+                <p className="text-[13px] text-emerald-400 font-medium">Signed &amp; broadcast to Bitcoin</p>
+              </div>
+              <div className="space-y-1.5">
+                <p className="text-[11px] text-zinc-500 font-mono uppercase tracking-wider">Transaction</p>
+                <a
+                  href={`https://mempool.space/testnet/tx/${signResult}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group inline-flex items-center gap-1.5 text-[12px] text-cyan-400 font-mono hover:text-cyan-300 transition-colors"
+                >
+                  {signResult.slice(0, 10)}…{signResult.slice(-8)}
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="opacity-60 group-hover:opacity-100 transition-opacity">
+                    <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" />
+                  </svg>
+                </a>
+              </div>
             </motion.div>
           )}
         </motion.div>
