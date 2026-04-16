@@ -88,9 +88,24 @@ export function PrivacyPanel() {
         </div>
 
         {umbraRegistered ? (
-          <div className="flex items-center gap-2 text-[13px] text-[#00e5a0]/80">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 6L9 17l-5-5" /></svg>
-            Active &mdash; toggle &quot;Private send&quot; when sending.
+          <div className="space-y-2.5">
+            <div className="flex items-center gap-2 text-[13px] text-[#00e5a0]/80">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 6L9 17l-5-5" /></svg>
+              Active &mdash; toggle &quot;Private send&quot; when sending.
+            </div>
+            <p className="text-[12px] text-zinc-500 leading-relaxed">
+              Recipients also need to be registered with Umbra on {networkLabel} to receive private transfers.
+            </p>
+            <button
+              onClick={handleUmbraRegister}
+              disabled={umbraRegistering}
+              className="text-[12px] text-zinc-400 hover:text-violet-300 transition disabled:opacity-40"
+            >
+              {umbraRegistering ? "Re-registering…" : "Re-register (if sends fail) →"}
+            </button>
+            {umbraError && (
+              <p className="text-[12px] text-red-400/70">{umbraError}</p>
+            )}
           </div>
         ) : umbraRegistering ? (
           <div className="flex items-center justify-center gap-2 py-2.5 text-[13px] text-zinc-400">

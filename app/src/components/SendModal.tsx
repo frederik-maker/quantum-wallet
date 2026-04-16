@@ -50,7 +50,18 @@ export function SendModal({ onClose }: SendModalProps) {
         setTxSig(sig);
       }
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Failed");
+      const raw = err instanceof Error ? err.message : "Failed";
+      // Friendlier messages for common Umbra failures.
+      const lower = raw.toLowerCase();
+      let friendly = raw;
+      if (lower.includes("receiver is not registered") || (lower.includes("receiver") && lower.includes("not registered"))) {
+        friendly = "The recipient isn't registered with Umbra on this network. Both sender and recipient must register before private transfers work. If you're sending to yourself and see this, your own registration didn't land — go to Privacy → Re-register.";
+      } else if (lower.includes("sender is not registered") || (lower.includes("sender") && lower.includes("not registered"))) {
+        friendly = "Your Umbra registration didn't land on this network. Go to Privacy → Re-register, then try again.";
+      } else if (lower.includes("timestampinfuture") || lower.includes("timestamp") && lower.includes("future")) {
+        friendly = "Devnet cluster clock is lagging — Umbra rejects the tx as too-recent. Switch to mainnet or retry in 30 seconds.";
+      }
+      setError(friendly);
     } finally {
       setSending(false);
     }
