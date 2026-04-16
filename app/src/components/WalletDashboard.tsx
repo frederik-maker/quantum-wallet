@@ -441,6 +441,7 @@ export function WalletDashboard({ onViewHome }: WalletDashboardProps) {
           </div>
           <a href="https://github.com/frederik-maker/quantum-wallet" target="_blank" rel="noopener noreferrer" className="text-[10px] text-zinc-600 hover:text-zinc-400 transition-colors font-mono">GitHub &rarr;</a>
         </div>
+        <p className="mt-4 text-[10px] text-zinc-600 leading-relaxed text-center">Unaudited hackathon project. Not for production use. Assume any real funds sent will be lost.</p>
       </motion.main>
 
       {/* Modals */}

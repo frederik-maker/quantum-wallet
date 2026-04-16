@@ -96,6 +96,7 @@ export function CreateWallet({ hasWallet, onBackToWallet }: CreateWalletProps) {
             <div className="flex items-center gap-5 mt-6 text-[10px] font-mono text-zinc-600">
               <a href="https://github.com/frederik-maker/quantum-wallet" target="_blank" rel="noopener noreferrer" className="hover:text-[#00e5a0]/60 transition-colors duration-300">Source code &rarr;</a>
             </div>
+            <p className="mt-8 text-[10px] text-zinc-600 leading-relaxed">Unaudited hackathon project. Not for production use. Assume any real funds sent to this wallet will be lost.</p>
           </motion.div>
         </motion.div>
       ) : (

@@ -165,6 +165,10 @@ The one-time signature constraint is invisible to the user -- it just looks like
 
 Based on the [Winternitz Vault](https://github.com/deanmlittle/solana-winternitz-vault) on-chain program by Dean Little.
 
+## Disclaimer
+
+This is an unaudited hackathon project. It is not intended for production use. Do not send real funds to this wallet — assume any funds sent will be lost.
+
 ## License
 
 MIT
