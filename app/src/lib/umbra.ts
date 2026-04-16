@@ -4,52 +4,67 @@
  *
  * Flow: Vault (quantum-safe) -> Umbra (privacy) -> Recipient
  * This gives both quantum resistance AND transaction privacy.
+ *
+ * Uses @umbra-privacy/sdk v4 with @solana/kit signer interface.
  */
 
-import { Connection, Keypair, PublicKey } from "@solana/web3.js";
+// Umbra program IDs (for reference)
+export const UMBRA_PROGRAM_ID_MAINNET = "UMBRAD2ishebJTcgCLkTkNUx1v3GyoAgpTRPeWoLykh";
+export const UMBRA_PROGRAM_ID_DEVNET = "DSuKkyqGVGgo4QtPABfxKJKygUDACbUhirnuv63mEpAJ";
 
-// Umbra program IDs
-export const UMBRA_PROGRAM_ID_MAINNET = new PublicKey(
-  "UMBRAD2ishebJTcgCLkTkNUx1v3GyoAgpTRPeWoLykh"
-);
-export const UMBRA_PROGRAM_ID_DEVNET = new PublicKey(
-  "DSuKkyqGVGgo4QtPABfxKJKygUDACbUhirnuv63mEpAJ"
-);
+// Native SOL wrapped mint
+const WSOL_MINT = "So11111111111111111111111111111111111111112";
+
+// Indexer endpoints
+const INDEXER_MAINNET = "https://utxo-indexer.api.umbraprivacy.com";
+const INDEXER_DEVNET = "https://utxo-indexer.api-devnet.umbraprivacy.com";
+
+/**
+ * Get a ZK asset provider that routes through our Next.js proxy to avoid CORS.
+ * The CDN (d3j9fjdkre529f.cloudfront.net) blocks cross-origin requests from localhost.
+ */
+async function getProxiedZkAssetProvider() {
+  const { getCdnZkAssetProvider } = await import("@umbra-privacy/web-zk-prover");
+  // The CDN provider accepts baseUrl — point it at our Next.js rewrite proxy
+  return getCdnZkAssetProvider({
+    baseUrl: `${typeof window !== "undefined" ? window.location.origin : ""}/umbra-zk-cdn`,
+  });
+}
 
 export interface UmbraConfig {
   network: "mainnet" | "devnet";
   rpcUrl: string;
-  signer: Keypair;
+  feePayerSecret: number[]; // raw secret key bytes from wallet store
 }
 
-export interface PrivateTransferParams {
-  recipient: string;
-  amount: bigint;
-  mint?: string; // SPL token mint, null for SOL
+/**
+ * Create an IUmbraSigner from raw secret key bytes.
+ * The SDK requires its own signer type, not @solana/web3.js Keypair.
+ */
+async function createSigner(feePayerSecret: number[]) {
+  const { createSignerFromPrivateKeyBytes } = await import("@umbra-privacy/sdk");
+  return createSignerFromPrivateKeyBytes(Uint8Array.from(feePayerSecret));
 }
 
 /**
  * Initialize the Umbra client for private transfers.
- * Uses dynamic import to avoid bundling issues.
  */
 export async function createUmbraClient(config: UmbraConfig) {
-  const {
-    getUmbraClient,
-  } = await import("@umbra-privacy/sdk");
+  const { getUmbraClient } = await import("@umbra-privacy/sdk");
+
+  const signer = await createSigner(config.feePayerSecret);
 
   const rpcSubscriptionsUrl = config.rpcUrl
     .replace("https://", "wss://")
     .replace("http://", "ws://");
 
   const client = await getUmbraClient({
-    signer: config.signer as unknown as Parameters<typeof getUmbraClient>[0]["signer"],
+    signer,
     network: config.network,
     rpcUrl: config.rpcUrl,
     rpcSubscriptionsUrl,
     indexerApiEndpoint:
-      config.network === "mainnet"
-        ? "https://utxo-indexer.api.umbraprivacy.com"
-        : "https://utxo-indexer-devnet.api.umbraprivacy.com",
+      config.network === "mainnet" ? INDEXER_MAINNET : INDEXER_DEVNET,
   });
 
   return client;
@@ -57,13 +72,18 @@ export async function createUmbraClient(config: UmbraConfig) {
 
 /**
  * Register a user with Umbra for confidential + anonymous transfers.
+ * Registration is idempotent — safe to call multiple times.
+ * Must be called before sending or receiving private transfers.
  */
 export async function registerUmbraUser(config: UmbraConfig) {
   const { getUserRegistrationFunction } = await import("@umbra-privacy/sdk");
+  const { getUserRegistrationProver } = await import("@umbra-privacy/web-zk-prover");
   const client = await createUmbraClient(config);
-  const register = getUserRegistrationFunction({ client });
-  await register({ confidential: true, anonymous: true });
-  return true;
+  const assetProvider = await getProxiedZkAssetProvider();
+  const zkProver = getUserRegistrationProver({ assetProvider });
+  const register = getUserRegistrationFunction({ client }, { zkProver });
+  const sigs = await register({ confidential: true, anonymous: true });
+  return sigs;
 }
 
 /**
@@ -79,17 +99,18 @@ export async function depositToEncrypted(
   } = await import("@umbra-privacy/sdk");
 
   const client = await createUmbraClient(config);
+  const signer = await createSigner(config.feePayerSecret);
   const deposit = getPublicBalanceToEncryptedBalanceDirectDepositorFunction({
     client,
   });
 
-  // Native SOL mint
-  const SOL_MINT = "So11111111111111111111111111111111111111112";
-  await deposit(
-    config.signer.publicKey.toBase58() as unknown as Parameters<typeof deposit>[0],
-    SOL_MINT as unknown as Parameters<typeof deposit>[1],
+  const result = await deposit(
+    signer.address,
+    WSOL_MINT as unknown as Parameters<typeof deposit>[1],
     amount as unknown as Parameters<typeof deposit>[2]
   );
+
+  return result;
 }
 
 /**
@@ -104,16 +125,18 @@ export async function withdrawFromEncrypted(
   } = await import("@umbra-privacy/sdk");
 
   const client = await createUmbraClient(config);
+  const signer = await createSigner(config.feePayerSecret);
   const withdraw = getEncryptedBalanceToPublicBalanceDirectWithdrawerFunction({
     client,
   });
 
-  const SOL_MINT = "So11111111111111111111111111111111111111112";
-  await withdraw(
-    config.signer.publicKey.toBase58() as unknown as Parameters<typeof withdraw>[0],
-    SOL_MINT as unknown as Parameters<typeof withdraw>[1],
+  const result = await withdraw(
+    signer.address,
+    WSOL_MINT as unknown as Parameters<typeof withdraw>[1],
     amount as unknown as Parameters<typeof withdraw>[2]
   );
+
+  return result;
 }
 
 /**
@@ -121,51 +144,59 @@ export async function withdrawFromEncrypted(
  * The recipient can scan and claim without revealing the sender.
  *
  * Full privacy flow:
- * 1. Vault signs with W-OTS (quantum-safe authorization)
- * 2. Funds move to fee payer
- * 3. Fee payer deposits into Umbra encrypted balance
- * 4. Umbra creates a claimable UTXO for the recipient
- * 5. Recipient scans and claims
+ * 1. Fee payer deposits from public balance
+ * 2. Umbra creates a claimable UTXO for the recipient
+ * 3. Recipient scans and claims
+ *
+ * Requires @umbra-privacy/web-zk-prover for ZK proof generation.
  */
 export async function sendPrivateTransfer(
   config: UmbraConfig,
-  params: PrivateTransferParams
+  recipient: string,
+  amount: bigint
 ) {
   const {
     getPublicBalanceToReceiverClaimableUtxoCreatorFunction,
   } = await import("@umbra-privacy/sdk");
 
-  const client = await createUmbraClient(config);
+  const {
+    getCreateReceiverClaimableUtxoFromPublicBalanceProver,
+  } = await import("@umbra-privacy/web-zk-prover");
 
-  // For UTXO-based anonymous transfers, we need a ZK prover
-  // In production, this would use @umbra-privacy/web-zk-prover
-  // For the hackathon demo, we use the direct deposit path
+  const client = await createUmbraClient(config);
+  const assetProvider = await getProxiedZkAssetProvider();
+  const zkProver = getCreateReceiverClaimableUtxoFromPublicBalanceProver({ assetProvider });
+
   const createUtxo = getPublicBalanceToReceiverClaimableUtxoCreatorFunction(
     { client },
-    { zkProver: null as unknown as Parameters<typeof getPublicBalanceToReceiverClaimableUtxoCreatorFunction>[1]["zkProver"] }
+    { zkProver }
   );
 
-  const SOL_MINT = "So11111111111111111111111111111111111111112";
-  await createUtxo({
-    destinationAddress: params.recipient as unknown as Parameters<typeof createUtxo>[0]["destinationAddress"],
-    mint: (params.mint || SOL_MINT) as unknown as Parameters<typeof createUtxo>[0]["mint"],
-    amount: params.amount as unknown as Parameters<typeof createUtxo>[0]["amount"],
+  const sigs = await createUtxo({
+    destinationAddress: recipient as unknown as Parameters<typeof createUtxo>[0]["destinationAddress"],
+    mint: WSOL_MINT as unknown as Parameters<typeof createUtxo>[0]["mint"],
+    amount: amount as unknown as Parameters<typeof createUtxo>[0]["amount"],
   });
+
+  return sigs;
 }
 
 /**
  * Scan for incoming private transfers (as recipient).
  */
-export async function scanForTransfers(config: UmbraConfig) {
-  const { getClaimableUtxoScannerFunction } = await import(
-    "@umbra-privacy/sdk"
-  );
+export async function scanForTransfers(config: UmbraConfig, treeIndex = 0) {
+  const { getClaimableUtxoScannerFunction } = await import("@umbra-privacy/sdk");
 
   const client = await createUmbraClient(config);
   const scan = getClaimableUtxoScannerFunction({ client });
 
-  const { received } = await scan(BigInt(0) as unknown as Parameters<typeof scan>[0], BigInt(0) as unknown as Parameters<typeof scan>[1]);
-  return received;
+  const result = await scan(treeIndex as unknown as Parameters<typeof scan>[0], 0 as unknown as Parameters<typeof scan>[1]);
+  return {
+    fromOthers: result.received,
+    fromSelf: result.selfBurnable,
+    publicFromOthers: result.publicReceived,
+    publicFromSelf: result.publicSelfBurnable,
+  };
 }
 
 /**
@@ -175,7 +206,7 @@ export async function checkUmbraStatus(
   config: UmbraConfig
 ): Promise<{ available: boolean; registered: boolean }> {
   try {
-    const client = await createUmbraClient(config);
+    await createUmbraClient(config);
     return { available: true, registered: true };
   } catch {
     return { available: false, registered: false };

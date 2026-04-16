@@ -9,9 +9,11 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@magicblock-labs/ephemeral-rollups-sdk": "^0.10.5",
     "@noble/hashes": "^2.2.0",
     "@solana/web3.js": "^1.98.4",
     "@umbra-privacy/sdk": "^4.0.0",
+    "@umbra-privacy/web-zk-prover": "^2.0.1",
     "bs58": "^6.0.0",
     "framer-motion": "^12.38.0",
     "js-sha3": "^0.9.3",
@@ -19,6 +21,8 @@
     "next": "16.2.3",
     "react": "19.2.4",
     "react-dom": "19.2.4",
+    "react-qr-code": "^2.0.18",
+    "snarkjs": "^0.7.6",
     "zustand": "^5.0.12"
   },
   "devDependencies": {

@@ -1,82 +1,90 @@
 # Quantum Vault
 
-**The first quantum-resistant Solana wallet.**
+**The first quantum-resistant Solana wallet with built-in privacy.**
 
-One-time signatures. Automatic key rotation. Zero exposure. Works today, on mainnet, without waiting for a protocol upgrade.
+One-time signatures. Automatic key rotation. Confidential transfers. Works today on Solana without waiting for a protocol upgrade.
+
+> Built for the [Colosseum Frontier Hackathon](https://www.colosseum.org/) (April-May 2026)
+> Tracks: [MagicBlock Privacy](https://earn.superteam.fun/) | [Umbra SDK](https://earn.superteam.fun/)
 
 ---
 
 ## The Problem
 
-Every Solana wallet today uses Ed25519 signatures -- vulnerable to quantum computers. The Solana Foundation tested quantum-safe transactions on testnet in April 2026. Results: **90% speed reduction**, **40x larger signatures**, and **no mainnet timeline**.
+Every Solana wallet today uses Ed25519 signatures, which are vulnerable to quantum computers. When quantum machines break Ed25519, every wallet with a revealed public key is at risk. Users need protection **now**, not when a protocol upgrade eventually ships.
 
-Quantum computing advances don't wait. When quantum computers break Ed25519, every wallet with a revealed public key is at risk. Users need protection *now*.
+On top of that, every transaction on Solana is fully public. Sender, recipient, and amount are visible to anyone. Financial privacy should be the default, not an afterthought.
+
+**Target users:** Anyone holding value on Solana who wants protection against both quantum threats and surveillance. Power users, DAOs, treasuries, and privacy-conscious individuals.
 
 ## The Solution
 
-Quantum Vault wraps the [Winternitz Vault](https://github.com/deanmlittle/solana-winternitz-vault) primitive (by Dean Little) into a consumer-grade wallet with privacy integrations. Winternitz One-Time Signatures (W-OTS) are quantum-resistant by construction -- they rely only on hash function security (Keccak256), not discrete logarithms.
+Quantum Vault combines three primitives into one wallet:
 
-**Every transaction automatically rotates to fresh keys.** Your private key is never exposed long enough to attack -- even by a quantum computer.
+1. **Winternitz One-Time Signatures (W-OTS)** for quantum resistance -- keys rotate after every transaction
+2. **Umbra SDK** for confidential transfers -- sender and amount hidden on-chain
+3. **MagicBlock Ephemeral Rollups** for fast, private key rotation -- 10-50ms vs ~400ms
+
+The result: a wallet where keys expire before they can be cracked, and transactions stay private by default.
 
 ## How It Works
 
-1. **Create** -- Generates a Winternitz keypair (32 random scalars, each hashed 256x via Keccak256). The merkle root becomes a PDA on Solana.
-2. **Send** -- The vault splits: funds go to recipient + a new vault with fresh keys. Old vault is atomically closed.
+1. **Create** -- Generates a W-OTS keypair (32 random scalars, each hashed 256x via Keccak256). The merkle root becomes a PDA on Solana.
+2. **Send** -- The vault splits: funds go to recipient + a new vault with fresh keys. Old vault is atomically closed. Optionally route through Umbra for confidential transfer.
 3. **Receive** -- Send SOL to your vault address. After any spend, the address rotates (like Bitcoin UTXOs).
-4. **Import** -- Migrate funds from a legacy Ed25519 wallet into a quantum-safe vault.
+4. **Import** -- Migrate funds from a legacy Ed25519 wallet (Phantom, Solflare, etc.) into a quantum-safe vault.
 
 ## Architecture
 
 ```
- Wallet UI (Next.js)
-      |
- TypeScript SDK
- - winternitz.ts    Keygen, sign, verify (Keccak256 W-OTS)
- - vault.ts         Transaction builders (open/split/close)
- - umbra.ts         Privacy layer (confidential transfers)
- - magicblock.ts    Ephemeral rollups (fast vault rotation)
- - wallet-store.ts  State management (vault pool, auto-rotation)
-      |
- On-Chain Program (Rust/Pinocchio)
- - 3 instructions: OpenVault, SplitVault, CloseVault
- - Zero on-chain data -- PDA address IS the pubkey hash
- - 896-byte Winternitz signatures verified on-chain
- - Optimized for ~900K compute units
-      |
- Solana (Devnet / Mainnet)
+Wallet UI (Next.js + Framer Motion)
+     |
+TypeScript SDK
+├── winternitz.ts    W-OTS keygen, sign, verify (Keccak256)
+├── vault.ts         Transaction builders (open/split/close)
+├── umbra.ts         Umbra SDK integration (confidential transfers)
+├── magicblock.ts    Ephemeral rollup routing (fast key rotation)
+└── wallet-store.ts  Zustand state (vault pool, auto-rotation, persistence)
+     |
+On-Chain Program (Rust / Pinocchio)
+├── OpenVault     Create vault PDA from W-OTS pubkey hash
+├── SplitVault    Atomic send + rotate to fresh keypair
+└── CloseVault    Withdraw remaining funds, close vault
+     |
+Solana (Devnet / Mainnet)
 ```
 
-## Integrations
+## Umbra SDK Integration
 
-### Umbra Privacy SDK
+Adds **confidential transfers** on top of quantum safety:
 
-Adds **confidential transfers** on top of quantum safety. The flow:
-
-1. Vault signs with W-OTS (quantum-safe authorization)
-2. Funds route through Umbra's encrypted UTXO system
-3. Recipient scans and claims -- sender and amount hidden on-chain
+1. User registers with Umbra (one-time setup)
+2. On send, toggle "Private send" to route through Umbra's encrypted UTXO system
+3. Vault signs with W-OTS (quantum-safe authorization), funds route through Umbra
+4. Recipient scans and claims -- sender and amount hidden on-chain
 
 This gives both **quantum resistance** and **transaction privacy** -- a combination no other wallet offers.
 
 - SDK: `@umbra-privacy/sdk`
-- Program: `UMBRAD2ishebJTcgCLkTkNUx1v3GyoAgpTRPeWoLykh` (mainnet)
 - Toggle: "Private send" in the Send modal
+- Status: Visible in Privacy tab with activation state
 
-### MagicBlock Ephemeral Rollups
+## MagicBlock Integration
 
-Uses MagicBlock's high-speed execution environment for vault operations:
+Uses MagicBlock's ephemeral execution environment for vault operations:
 
-- **10-50ms** latency for vault rotation (vs ~400ms on mainnet)
-- Batch pre-initialize multiple vaults
+- **10-50ms** latency for vault rotation (vs ~400ms on base Solana)
 - Private execution environment for key rotation
+- Automatic routing when MagicBlock is available
 
 - Router: `https://router.magicblock.app`
-- Integration: Vault transactions route through MagicBlock when available
+- Status: Check availability in Privacy tab
 
 ## Quick Start
 
 ```bash
-cd app
+git clone https://github.com/frederik-maker/quantum-wallet.git
+cd quantum-wallet/app
 npm install
 npm run dev
 ```
@@ -90,16 +98,11 @@ cd program
 cargo build-sbf
 ```
 
-### Deploy
+### Deploy to Devnet
 
 ```bash
-# Devnet
 solana config set --url devnet
 solana airdrop 2
-solana program deploy program/target/deploy/quantum_vault.so --program-id program/keypair.json
-
-# Mainnet
-solana config set --url mainnet-beta
 solana program deploy program/target/deploy/quantum_vault.so --program-id program/keypair.json
 ```
 
@@ -127,26 +130,40 @@ The wallet manages a pool of pre-initialized vaults:
 2. On send: `SplitVault(old -> recipient + pre-opened vault)`
 3. Background replenishment after every spend
 
-The one-time signature constraint is invisible to the user.
+The one-time signature constraint is invisible to the user -- it just looks like a normal wallet.
 
 ## Security Model
 
-- **Quantum-resistant** -- Winternitz signatures rely on Keccak256, not discrete log
+- **Quantum-resistant** -- W-OTS relies on Keccak256, not discrete log
 - **One-time use enforced** -- Vault closes after every sign; no key reuse possible
-- **Client-side only** -- Keys never leave the browser
+- **Client-side only** -- Keys never leave the browser (localStorage)
 - **No servers** -- Direct Solana RPC, fully decentralized
 - **Replay-proof** -- Vault closure + committed recipient keys prevent replay
 - **Private** (optional) -- Umbra integration shields transfer details
+- **Compliant** -- Umbra viewing keys enable selective disclosure for audits
 
-## Hackathon
+## Judging Criteria Alignment
 
-Built for the **Colosseum Frontier Hackathon** (April-May 2026).
+### Technology (40%)
+- Full integration of Umbra SDK (confidential transfers, registration, viewing keys)
+- MagicBlock ephemeral rollups for private, fast key rotation
+- Working W-OTS implementation verified against on-chain program
+- Clean architecture: SDK layer, state management, UI components
 
-Side track submissions:
-- **Umbra SDK** -- Confidential transfers with quantum-safe authorization
-- **MagicBlock** -- Ephemeral rollups for high-speed vault rotation
+### Impact (30%)
+- Solves a real, growing threat (quantum computing vs Ed25519)
+- Adds privacy that Solana natively lacks
+- Works today without protocol changes
 
-Based on the [Winternitz Vault](https://github.com/deanmlittle/solana-winternitz-vault) by Dean Little.
+### Creativity & UX (30%)
+- Novel primitive: quantum safety + privacy in one wallet
+- Key rotation is invisible to the user
+- One-click migration from legacy wallets
+- Clean, minimal dark UI
+
+## Credits
+
+Based on the [Winternitz Vault](https://github.com/deanmlittle/solana-winternitz-vault) on-chain program by Dean Little.
 
 ## License
 

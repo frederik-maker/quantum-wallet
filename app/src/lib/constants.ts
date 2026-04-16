@@ -26,7 +26,7 @@ export const MIN_VAULT_POOL_SIZE = 2;
 export const RPC_ENDPOINTS: Record<string, string> = {
   "devnet": "https://api.devnet.solana.com",
   "testnet": "https://api.testnet.solana.com",
-  "mainnet-beta": "https://api.mainnet-beta.solana.com",
+  "mainnet-beta": "https://alpha-orbital-spree.solana-mainnet.quiknode.pro/6f2fc8208b2a137d50502ed7f07fd175530a7f7b/",
   "localnet": "http://localhost:8899",
 };
 

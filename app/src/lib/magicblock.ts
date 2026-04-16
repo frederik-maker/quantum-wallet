@@ -1,69 +1,77 @@
 /**
  * MagicBlock Ephemeral Rollups integration.
- * Uses MagicBlock's high-speed execution environment for vault operations.
+ * Uses MagicBlock's Magic Router to route vault transactions through
+ * their high-speed ephemeral execution environment.
  *
- * Benefits for Quantum Vault:
- * - Faster vault rotation (10-50ms vs ~400ms on mainnet)
- * - Batch vault operations in ephemeral rollup
- * - Private execution of key rotation
+ * The Magic Router is a drop-in Connection replacement that inspects
+ * writable accounts and automatically routes transactions to either
+ * the ephemeral rollup (fast, ~10-50ms) or base Solana layer.
  *
- * Integration approach:
- * - Use MagicBlock's router to send vault transactions
- * - Vault operations execute in ephemeral environment
- * - Results commit back to Solana mainnet
+ * Uses @magicblock-labs/ephemeral-rollups-sdk with ConnectionMagicRouter.
  */
 
 import {
-  Connection,
   Keypair,
   Transaction,
-  TransactionInstruction,
+  sendAndConfirmTransaction,
 } from "@solana/web3.js";
 
-// MagicBlock ephemeral rollup endpoints
-export const MAGICBLOCK_ROUTER_DEVNET = "https://devnet.magicblock.app";
-export const MAGICBLOCK_ROUTER_MAINNET = "https://mainnet.magicblock.app";
+// MagicBlock Magic Router endpoints
+export const MAGICBLOCK_ROUTER_DEVNET = "https://devnet-router.magicblock.app";
+export const MAGICBLOCK_ROUTER_DEVNET_WS = "wss://devnet-router.magicblock.app";
+
+// Direct ER validator endpoints (fallback)
+export const MAGICBLOCK_ER_DEVNET_US = "https://devnet-us.magicblock.app";
+export const MAGICBLOCK_ER_DEVNET_EU = "https://devnet-eu.magicblock.app";
 
 export interface MagicBlockConfig {
   network: "devnet" | "mainnet-beta";
   feePayer: Keypair;
 }
 
-function getRouterUrl(network: string): string {
-  return network === "mainnet-beta"
-    ? MAGICBLOCK_ROUTER_MAINNET
-    : MAGICBLOCK_ROUTER_DEVNET;
+/**
+ * Get a MagicBlock ConnectionMagicRouter.
+ * This is a drop-in replacement for @solana/web3.js Connection
+ * that automatically routes transactions through the ephemeral rollup
+ * when the touched accounts are delegated to the ER.
+ */
+export async function getMagicBlockConnection(network: "devnet" | "mainnet-beta") {
+  if (network === "mainnet-beta") {
+    throw new Error("MagicBlock ephemeral rollups are currently available on devnet only. Switch to devnet to use this feature.");
+  }
+
+  const { ConnectionMagicRouter } = await import(
+    "@magicblock-labs/ephemeral-rollups-sdk"
+  );
+
+  const connection = new ConnectionMagicRouter(MAGICBLOCK_ROUTER_DEVNET, {
+    wsEndpoint: MAGICBLOCK_ROUTER_DEVNET_WS,
+  });
+
+  return connection;
 }
 
 /**
- * Send a transaction through MagicBlock's ephemeral rollup router.
- * This routes the transaction through MagicBlock's high-speed environment
- * instead of directly to the Solana validator.
- *
- * The router automatically:
- * 1. Delegates relevant accounts to the ephemeral rollup
- * 2. Executes the transaction at high speed
- * 3. Commits results back to Solana
+ * Send a transaction through MagicBlock's Magic Router.
+ * The router automatically decides whether to execute on the
+ * ephemeral rollup or the base Solana layer.
  */
 export async function sendViaMagicBlock(
   config: MagicBlockConfig,
   transaction: Transaction
 ): Promise<string> {
-  const routerUrl = getRouterUrl(config.network);
-  const routerConnection = new Connection(routerUrl, "confirmed");
+  const connection = await getMagicBlockConnection(config.network);
 
-  // Get recent blockhash from the router
-  const { blockhash } = await routerConnection.getLatestBlockhash();
-  transaction.recentBlockhash = blockhash;
-  transaction.feePayer = config.feePayer.publicKey;
-  transaction.sign(config.feePayer);
-
-  const signature = await routerConnection.sendRawTransaction(
-    transaction.serialize(),
-    { skipPreflight: true }
+  const signature = await sendAndConfirmTransaction(
+    connection,
+    transaction,
+    [config.feePayer],
+    {
+      skipPreflight: true,
+      commitment: "confirmed",
+    }
   );
 
-  await routerConnection.confirmTransaction(signature, "confirmed");
   return signature;
 }
 
@@ -71,69 +79,50 @@ export async function sendViaMagicBlock(
  * Execute a batch of vault operations through MagicBlock.
  * Useful for pre-initializing multiple vaults at once.
  *
- * Normal flow: 3 separate txs for 3 vaults = ~1.2s
+ * Normal flow: 3 separate txs = ~1.2s
  * MagicBlock flow: 3 txs through ephemeral rollup = ~150ms
  */
 export async function batchVaultOperations(
   config: MagicBlockConfig,
   transactions: Transaction[]
 ): Promise<string[]> {
-  const routerUrl = getRouterUrl(config.network);
-  const routerConnection = new Connection(routerUrl, "confirmed");
-
-  const { blockhash } = await routerConnection.getLatestBlockhash();
+  const connection = await getMagicBlockConnection(config.network);
 
   const signatures: string[] = [];
-
   for (const tx of transactions) {
-    tx.recentBlockhash = blockhash;
-    tx.feePayer = config.feePayer.publicKey;
-    tx.sign(config.feePayer);
-
-    const sig = await routerConnection.sendRawTransaction(tx.serialize(), {
-      skipPreflight: true,
-    });
+    const sig = await sendAndConfirmTransaction(
+      connection,
+      tx,
+      [config.feePayer],
+      {
+        skipPreflight: true,
+        commitment: "confirmed",
+      }
+    );
     signatures.push(sig);
   }
-
-  // Confirm all in parallel
-  await Promise.all(
-    signatures.map((sig) =>
-      routerConnection.confirmTransaction(sig, "confirmed")
-    )
-  );
 
   return signatures;
 }
 
 /**
  * Check if MagicBlock router is available for a given network.
+ * Tries to hit the router's RPC endpoint.
  */
 export async function checkMagicBlockAvailability(
   network: "devnet" | "mainnet-beta"
 ): Promise<boolean> {
+  // MagicBlock ephemeral rollups are devnet-only for now
+  if (network === "mainnet-beta") {
+    throw new Error("MagicBlock rollups are available on devnet only. Switch to devnet to enable fast execution.");
+  }
+
   try {
-    const routerUrl = getRouterUrl(network);
-    const connection = new Connection(routerUrl, "confirmed");
+    const connection = await getMagicBlockConnection(network);
+    // getLatestBlockhash is a lightweight RPC call to test connectivity
     await connection.getLatestBlockhash();
     return true;
   } catch {
-    return false;
+    throw new Error("Could not connect to MagicBlock devnet router. Try again later.");
   }
-}
-
-/**
- * Get MagicBlock performance metrics for display in the UI.
- */
-export function getMagicBlockInfo() {
-  return {
-    name: "MagicBlock Ephemeral Rollups",
-    description: "High-speed execution environment for Solana",
-    benefits: [
-      "10-50ms transaction latency",
-      "Batch vault rotations",
-      "Private execution environment",
-    ],
-    docsUrl: "https://docs.magicblock.gg",
-  };
 }
