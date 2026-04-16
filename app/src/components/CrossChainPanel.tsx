@@ -12,6 +12,7 @@ export function CrossChainPanel() {
   const [signAmount, setSignAmount] = useState("");
   const [signing, setSigning] = useState(false);
   const [signResult, setSignResult] = useState<string | null>(null);
+  const [btcCopied, setBtcCopied] = useState(false);
 
   const handleConnect = async () => {
     setConnecting(true);
@@ -68,13 +69,20 @@ export function CrossChainPanel() {
     }
   };
 
+  const copyBtcAddr = () => {
+    if (!dwalletBtcAddress) return;
+    navigator.clipboard.writeText(dwalletBtcAddress);
+    setBtcCopied(true);
+    setTimeout(() => setBtcCopied(false), 2000);
+  };
+
   return (
     <div className="space-y-6">
       {/* Intro */}
       <div className="pb-1">
         <p className="text-[15px] font-semibold text-zinc-200 mb-2" style={{ letterSpacing: "-0.01em" }}>Cross-chain</p>
         <p className="text-[13px] text-zinc-400 leading-relaxed">
-          Send to <span className="text-zinc-200">Bitcoin, Ethereum, and other chains</span>{" "}directly from this wallet. No bridges, no extra wallets &mdash; your quantum-safe keys authorize everything.
+          Ika gives you addresses on <span className="text-zinc-200">Bitcoin, Ethereum, and other chains</span> that only your quantum-safe Solana keys can spend from. One wallet, all chains.
         </p>
       </div>
 
@@ -91,7 +99,7 @@ export function CrossChainPanel() {
             </div>
             <div>
               <p className="text-[14px] font-medium text-white">Ika dWallet</p>
-              <p className="text-[12px] text-zinc-400">Sign on any chain from Solana</p>
+              <p className="text-[12px] text-zinc-400">Multi-chain addresses from one Solana wallet</p>
             </div>
           </div>
           <div className={`px-2 py-0.5 rounded-full text-[10px] font-mono ${
@@ -99,14 +107,14 @@ export function CrossChainPanel() {
               ? "bg-cyan-500/[0.08] text-cyan-400 border border-cyan-500/[0.15]"
               : "bg-zinc-800/50 text-zinc-500 border border-zinc-700/30"
           }`}>
-            {ikaEnabled ? "active" : "inactive"}
+            {ikaEnabled ? "connected" : "not connected"}
           </div>
         </div>
 
         {!ikaEnabled ? (
           <div className="space-y-3">
             <p className="text-[13px] text-zinc-400 leading-relaxed">
-              Create a cross-chain signing wallet. Once connected, you can send Bitcoin, Ethereum, and other assets &mdash; all authorized by your quantum-safe keys on Solana.
+              Connect to Ika to create addresses on Bitcoin, Ethereum, and other chains. These addresses are controlled by your Solana vault &mdash; only your quantum-safe keys can authorize spending.
             </p>
             <motion.button
               whileHover={{ scale: 1.01 }}
@@ -118,25 +126,50 @@ export function CrossChainPanel() {
               {connecting ? (
                 <span className="inline-flex items-center gap-2">
                   <span className="w-3 h-3 border-2 border-cyan-400/30 border-t-cyan-400 rounded-full animate-spin" />
-                  Creating dWallet...
+                  Connecting to Ika...
                 </span>
               ) : (
-                "Create dWallet"
+                "Connect to Ika"
               )}
             </motion.button>
+            <p className="text-[11px] text-zinc-500 leading-relaxed">
+              This is a devnet demo &mdash; addresses are simulated. In production, Ika&apos;s network generates real keys via distributed key generation.
+            </p>
           </div>
         ) : (
-          <div className="space-y-3">
-            <div className="grid grid-cols-2 gap-3">
-              <div className="p-3 rounded-xl bg-black/20 border border-cyan-500/[0.06]">
-                <p className="text-[11px] text-zinc-400 mb-1">Signing wallet</p>
-                <p className="text-[12px] text-cyan-400 font-mono truncate">{dwalletAddress}</p>
+          <div className="space-y-4">
+            <p className="text-[13px] text-zinc-400 leading-relaxed">
+              Your Solana keys now control this Bitcoin address. Send testnet Bitcoin here, then use the form below to spend it &mdash; all authorized from Solana.
+            </p>
+
+            {/* Bitcoin address — the main thing */}
+            <div className="p-4 rounded-xl bg-black/20 border border-amber-500/[0.10]">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-[12px] text-zinc-300 font-medium">Your Bitcoin address (testnet)</p>
+                <button
+                  onClick={copyBtcAddr}
+                  className="text-[11px] text-zinc-500 hover:text-zinc-300 transition-colors"
+                >
+                  {btcCopied ? "copied" : "copy"}
+                </button>
               </div>
-              <div className="p-3 rounded-xl bg-black/20 border border-cyan-500/[0.06]">
-                <p className="text-[11px] text-zinc-400 mb-1">Bitcoin (testnet)</p>
-                <p className="text-[12px] text-amber-400 font-mono truncate">{dwalletBtcAddress}</p>
+              <p className="text-[13px] text-amber-400 font-mono break-all leading-relaxed">{dwalletBtcAddress}</p>
+              <p className="text-[11px] text-zinc-500 mt-2">
+                Fund this address with tBTC to start sending cross-chain transactions.
+              </p>
+            </div>
+
+            {/* dWallet ID — secondary */}
+            <div className="p-3 rounded-xl bg-black/20 border border-cyan-500/[0.06]">
+              <div className="flex items-center justify-between">
+                <p className="text-[11px] text-zinc-500">dWallet ID</p>
+                <p className="text-[11px] text-cyan-400/70 font-mono">{dwalletAddress}</p>
               </div>
             </div>
+
+            <p className="text-[11px] text-zinc-500 leading-relaxed">
+              Demo mode &mdash; addresses are simulated. In production, Ika generates real multi-chain keys via distributed key generation, and balances/transactions are live.
+            </p>
           </div>
         )}
 
@@ -158,12 +191,16 @@ export function CrossChainPanel() {
               <path d="M12 22V12" opacity="0.5" />
               <path d="M3 7l9 5 9-5" opacity="0.5" />
             </svg>
-            <p className="text-[14px] font-medium text-white">Send Bitcoin</p>
+            <p className="text-[14px] font-medium text-white">Sign a Bitcoin transaction</p>
           </div>
+
+          <p className="text-[13px] text-zinc-400 leading-relaxed">
+            Spend Bitcoin from your address above. Your quantum-safe keys on Solana authorize the spend, then Ika produces a valid Bitcoin signature.
+          </p>
 
           <div className="space-y-3">
             <div>
-              <label className="text-[11px] text-zinc-400 uppercase tracking-wider mb-1.5 block">Recipient address</label>
+              <label className="text-[11px] text-zinc-400 uppercase tracking-wider mb-1.5 block">Send to</label>
               <input
                 type="text"
                 value={signTarget}
@@ -218,10 +255,6 @@ export function CrossChainPanel() {
               </a>
             </motion.div>
           )}
-
-          <p className="text-[12px] text-zinc-500 leading-relaxed">
-            Your one-time keys authorize the transaction on Solana. Ika&apos;s network then produces a valid Bitcoin signature &mdash; no bridge or wrapped tokens involved.
-          </p>
         </motion.div>
       )}
 
@@ -231,19 +264,19 @@ export function CrossChainPanel() {
         <div className="space-y-2.5 text-[13px] text-zinc-400 leading-relaxed">
           <div className="flex gap-3 items-start">
             <span className="text-cyan-400/70 font-mono text-[11px] mt-0.5 shrink-0">1</span>
-            <p>You approve the transaction with your <span className="text-zinc-200">quantum-safe keys</span> on Solana</p>
+            <p><span className="text-zinc-200">Connect</span> &mdash; Ika creates a Bitcoin address that only your Solana vault can spend from</p>
           </div>
           <div className="flex gap-3 items-start">
             <span className="text-cyan-400/70 font-mono text-[11px] mt-0.5 shrink-0">2</span>
-            <p>The on-chain program forwards your request to <span className="text-zinc-200">Ika&apos;s signing network</span></p>
+            <p><span className="text-zinc-200">Fund</span> &mdash; Send Bitcoin to your new address (it&apos;s a real Bitcoin address, just controlled from Solana)</p>
           </div>
           <div className="flex gap-3 items-start">
             <span className="text-cyan-400/70 font-mono text-[11px] mt-0.5 shrink-0">3</span>
-            <p>Ika produces a <span className="text-zinc-200">native signature</span> for the target chain (Bitcoin, Ethereum, etc.)</p>
+            <p><span className="text-zinc-200">Sign</span> &mdash; Your quantum-safe keys authorize the spend, and Ika produces a valid Bitcoin signature</p>
           </div>
           <div className="flex gap-3 items-start">
             <span className="text-cyan-400/70 font-mono text-[11px] mt-0.5 shrink-0">4</span>
-            <p>The signed transaction is <span className="text-zinc-200">broadcast directly</span> &mdash; no bridge needed</p>
+            <p><span className="text-zinc-200">Broadcast</span> &mdash; The signed transaction goes directly to Bitcoin &mdash; no bridge, no wrapped tokens</p>
           </div>
         </div>
       </div>
