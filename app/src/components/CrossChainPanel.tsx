@@ -69,12 +69,12 @@ export function CrossChainPanel() {
   };
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       {/* Intro */}
-      <div className="pb-2">
-        <p className="text-[13px] text-zinc-400 mb-1">Cross-chain</p>
-        <p className="text-xs text-zinc-500 leading-relaxed">
-          Control assets on <em className="text-zinc-400 not-italic">any chain</em> from your quantum-safe Solana wallet. Ika dWallet handles the signing — WOTS handles the authorization.
+      <div className="pb-1">
+        <p className="text-[15px] font-semibold text-zinc-200 mb-2" style={{ letterSpacing: "-0.01em" }}>Cross-chain</p>
+        <p className="text-[13px] text-zinc-400 leading-relaxed">
+          Send to <span className="text-zinc-200">Bitcoin, Ethereum, and other chains</span>{" "}directly from this wallet. No bridges, no extra wallets &mdash; your quantum-safe keys authorize everything.
         </p>
       </div>
 
@@ -90,8 +90,8 @@ export function CrossChainPanel() {
               </svg>
             </div>
             <div>
-              <p className="text-sm font-medium text-white">Ika dWallet</p>
-              <p className="text-[11px] text-zinc-500">Cross-chain MPC signing via Ika Network</p>
+              <p className="text-[14px] font-medium text-white">Ika dWallet</p>
+              <p className="text-[12px] text-zinc-400">Sign on any chain from Solana</p>
             </div>
           </div>
           <div className={`px-2 py-0.5 rounded-full text-[10px] font-mono ${
@@ -105,15 +105,15 @@ export function CrossChainPanel() {
 
         {!ikaEnabled ? (
           <div className="space-y-3">
-            <p className="text-xs text-zinc-500 leading-relaxed">
-              Create a dWallet to sign transactions on Bitcoin, Ethereum, and other chains. Your Solana program authorizes via WOTS, then Ika&apos;s MPC network produces the target-chain signature.
+            <p className="text-[13px] text-zinc-400 leading-relaxed">
+              Create a cross-chain signing wallet. Once connected, you can send Bitcoin, Ethereum, and other assets &mdash; all authorized by your quantum-safe keys on Solana.
             </p>
             <motion.button
               whileHover={{ scale: 1.01 }}
               whileTap={{ scale: 0.98 }}
               onClick={handleConnect}
               disabled={connecting}
-              className="btn-cyan-soft w-full py-2.5 rounded-xl text-xs font-medium disabled:opacity-50 transition-all"
+              className="btn-cyan-soft w-full py-2.5 rounded-xl text-[13px] font-medium disabled:opacity-50 transition-all"
             >
               {connecting ? (
                 <span className="inline-flex items-center gap-2">
@@ -129,19 +129,19 @@ export function CrossChainPanel() {
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-3">
               <div className="p-3 rounded-xl bg-black/20 border border-cyan-500/[0.06]">
-                <p className="text-[10px] text-zinc-500 mb-1">dWallet</p>
-                <p className="text-[11px] text-cyan-400 font-mono truncate">{dwalletAddress}</p>
+                <p className="text-[11px] text-zinc-400 mb-1">Signing wallet</p>
+                <p className="text-[12px] text-cyan-400 font-mono truncate">{dwalletAddress}</p>
               </div>
               <div className="p-3 rounded-xl bg-black/20 border border-cyan-500/[0.06]">
-                <p className="text-[10px] text-zinc-500 mb-1">Bitcoin (testnet)</p>
-                <p className="text-[11px] text-amber-400 font-mono truncate">{dwalletBtcAddress}</p>
+                <p className="text-[11px] text-zinc-400 mb-1">Bitcoin (testnet)</p>
+                <p className="text-[12px] text-amber-400 font-mono truncate">{dwalletBtcAddress}</p>
               </div>
             </div>
           </div>
         )}
 
         {error && (
-          <p className="mt-3 text-xs text-red-400/80">{error}</p>
+          <p className="mt-3 text-[13px] text-red-400/80">{error}</p>
         )}
       </div>
 
@@ -153,33 +153,33 @@ export function CrossChainPanel() {
           className="card-subtle p-5 rounded-2xl space-y-4"
         >
           <div className="flex items-center gap-2 mb-1">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="1.5">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="1.5">
               <path d="M12 2L3 7v10l9 5 9-5V7l-9-5z" />
               <path d="M12 22V12" opacity="0.5" />
               <path d="M3 7l9 5 9-5" opacity="0.5" />
             </svg>
-            <p className="text-sm font-medium text-white">Sign Bitcoin Transaction</p>
+            <p className="text-[14px] font-medium text-white">Send Bitcoin</p>
           </div>
 
           <div className="space-y-3">
             <div>
-              <label className="text-[10px] text-zinc-500 uppercase tracking-wider mb-1 block">Recipient (Bitcoin address)</label>
+              <label className="text-[11px] text-zinc-400 uppercase tracking-wider mb-1.5 block">Recipient address</label>
               <input
                 type="text"
                 value={signTarget}
                 onChange={(e) => setSignTarget(e.target.value)}
                 placeholder="tb1q... or bc1q..."
-                className="w-full bg-transparent border border-zinc-700/50 rounded-lg px-3 py-2.5 text-xs text-white placeholder:text-zinc-600 focus:outline-none focus:border-cyan-500/30 transition font-mono"
+                className="w-full bg-transparent border border-zinc-700/50 rounded-lg px-3 py-2.5 text-[13px] text-white placeholder:text-zinc-600 focus:outline-none focus:border-cyan-500/30 transition font-mono"
               />
             </div>
             <div>
-              <label className="text-[10px] text-zinc-500 uppercase tracking-wider mb-1 block">Amount (tBTC)</label>
+              <label className="text-[11px] text-zinc-400 uppercase tracking-wider mb-1.5 block">Amount (tBTC)</label>
               <input
                 type="text"
                 value={signAmount}
                 onChange={(e) => setSignAmount(e.target.value)}
                 placeholder="0.001"
-                className="w-full bg-transparent border border-zinc-700/50 rounded-lg px-3 py-2.5 text-xs text-white placeholder:text-zinc-600 focus:outline-none focus:border-cyan-500/30 transition font-mono"
+                className="w-full bg-transparent border border-zinc-700/50 rounded-lg px-3 py-2.5 text-[13px] text-white placeholder:text-zinc-600 focus:outline-none focus:border-cyan-500/30 transition font-mono"
               />
             </div>
           </div>
@@ -189,12 +189,12 @@ export function CrossChainPanel() {
             whileTap={{ scale: 0.98 }}
             onClick={handleSign}
             disabled={signing || !signTarget || !signAmount}
-            className="w-full py-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-medium disabled:opacity-30 hover:bg-amber-500/15 transition-all"
+            className="w-full py-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[13px] font-medium disabled:opacity-30 hover:bg-amber-500/15 transition-all"
           >
             {signing ? (
               <span className="inline-flex items-center gap-2">
                 <span className="w-3 h-3 border-2 border-amber-400/30 border-t-amber-400 rounded-full animate-spin" />
-                Signing via Ika...
+                Signing...
               </span>
             ) : (
               "Sign & Broadcast"
@@ -205,45 +205,45 @@ export function CrossChainPanel() {
             <motion.div
               initial={{ opacity: 0, y: 4 }}
               animate={{ opacity: 1, y: 0 }}
-              className="p-3 rounded-xl bg-emerald-500/[0.04] border border-emerald-500/[0.10]"
+              className="p-3.5 rounded-xl bg-emerald-500/[0.04] border border-emerald-500/[0.10]"
             >
-              <p className="text-[10px] text-emerald-400 mb-1">Bitcoin transaction signed</p>
+              <p className="text-[12px] text-emerald-400 mb-1">Transaction signed and broadcast</p>
               <a
                 href={`https://mempool.space/testnet/tx/${signResult}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-[11px] text-cyan-400 font-mono hover:underline truncate block"
+                className="text-[12px] text-cyan-400 font-mono hover:underline truncate block"
               >
                 {signResult.slice(0, 16)}...{signResult.slice(-8)}
               </a>
             </motion.div>
           )}
 
-          <p className="text-[10px] text-zinc-600 leading-relaxed">
-            Your WOTS signature authorizes the Solana program. The program CPIs to Ika, which produces an ECDSA signature for Bitcoin. No bridge needed.
+          <p className="text-[12px] text-zinc-500 leading-relaxed">
+            Your one-time keys authorize the transaction on Solana. Ika&apos;s network then produces a valid Bitcoin signature &mdash; no bridge or wrapped tokens involved.
           </p>
         </motion.div>
       )}
 
       {/* How it works */}
-      <div className="pt-2 space-y-2">
-        <p className="text-[10px] text-zinc-600 font-mono uppercase tracking-wider">How cross-chain signing works</p>
-        <div className="space-y-2 text-[11px] text-zinc-500 leading-relaxed">
+      <div className="pt-2 space-y-3">
+        <p className="text-[12px] text-zinc-400 font-mono uppercase tracking-wider">How it works</p>
+        <div className="space-y-2.5 text-[13px] text-zinc-400 leading-relaxed">
           <div className="flex gap-3 items-start">
-            <span className="text-cyan-500/60 font-mono text-[10px] mt-0.5">1</span>
-            <p>You sign with <span className="text-zinc-400">W-OTS</span> (quantum-safe authorization on Solana)</p>
+            <span className="text-cyan-400/70 font-mono text-[11px] mt-0.5 shrink-0">1</span>
+            <p>You approve the transaction with your <span className="text-zinc-200">quantum-safe keys</span> on Solana</p>
           </div>
           <div className="flex gap-3 items-start">
-            <span className="text-cyan-500/60 font-mono text-[10px] mt-0.5">2</span>
-            <p>The program CPIs to <span className="text-zinc-400">Ika dWallet</span> with your message</p>
+            <span className="text-cyan-400/70 font-mono text-[11px] mt-0.5 shrink-0">2</span>
+            <p>The on-chain program forwards your request to <span className="text-zinc-200">Ika&apos;s signing network</span></p>
           </div>
           <div className="flex gap-3 items-start">
-            <span className="text-cyan-500/60 font-mono text-[10px] mt-0.5">3</span>
-            <p>Ika&apos;s <span className="text-zinc-400">2PC-MPC network</span> produces a Bitcoin/Ethereum signature</p>
+            <span className="text-cyan-400/70 font-mono text-[11px] mt-0.5 shrink-0">3</span>
+            <p>Ika produces a <span className="text-zinc-200">native signature</span> for the target chain (Bitcoin, Ethereum, etc.)</p>
           </div>
           <div className="flex gap-3 items-start">
-            <span className="text-cyan-500/60 font-mono text-[10px] mt-0.5">4</span>
-            <p>The signed transaction is broadcast to the <span className="text-zinc-400">target chain</span></p>
+            <span className="text-cyan-400/70 font-mono text-[11px] mt-0.5 shrink-0">4</span>
+            <p>The signed transaction is <span className="text-zinc-200">broadcast directly</span> &mdash; no bridge needed</p>
           </div>
         </div>
       </div>

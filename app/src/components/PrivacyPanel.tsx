@@ -50,12 +50,12 @@ export function PrivacyPanel() {
   };
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       {/* Intro */}
-      <div className="pb-2">
-        <p className="text-[13px] text-zinc-400 mb-1">Privacy layer</p>
-        <p className="text-xs text-zinc-500 leading-relaxed">
-          Quantum Vault protects your keys. These features hide <em className="text-zinc-400 not-italic">who</em> you transact with and <em className="text-zinc-400 not-italic">how much</em>.
+      <div className="pb-1">
+        <p className="text-[15px] font-semibold text-zinc-200 mb-2" style={{ letterSpacing: "-0.01em" }}>Privacy</p>
+        <p className="text-[13px] text-zinc-400 leading-relaxed">
+          Your keys are quantum-safe. These features hide <span className="text-zinc-200">who you transact with</span> and <span className="text-zinc-200">how much you send</span>.
         </p>
       </div>
 
@@ -63,40 +63,40 @@ export function PrivacyPanel() {
       <div className="card-privacy p-5">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-violet-500/[0.06] flex items-center justify-center">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" strokeWidth="2" strokeLinecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
+            <div className="w-10 h-10 rounded-xl bg-violet-500/[0.06] border border-violet-500/[0.10] flex items-center justify-center">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" strokeWidth="2" strokeLinecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
             </div>
             <div>
-              <p className="text-[13px] font-medium text-white">Umbra Privacy</p>
-              <p className="text-[10px] text-zinc-500">Confidential transfers via encrypted UTXOs</p>
+              <p className="text-[14px] font-medium text-white">Umbra Privacy</p>
+              <p className="text-[12px] text-zinc-400">Hide sender and amount on-chain</p>
             </div>
           </div>
           <StatusPill active={umbraRegistered} loading={umbraRegistering} />
         </div>
 
-        <p className="text-[11px] text-zinc-500 leading-relaxed mb-4">
-          Uses Arcium MPC to hide amounts and break the on-chain link between sender and recipient. Both sides must register.
+        <p className="text-[13px] text-zinc-400 leading-relaxed mb-4">
+          Encrypts your transfers so nobody on-chain can see who sent what or how much. Both sender and recipient need to register once.
         </p>
 
         <div className="flex items-center gap-2 mb-4">
-          <span className="text-[10px] font-mono text-zinc-500 px-1.5 py-0.5 rounded bg-white/[0.03] border border-white/[0.04]">quantum-safe</span>
-          <span className="text-zinc-500 text-[10px]">+</span>
-          <span className="text-[10px] font-mono text-violet-400/70 px-1.5 py-0.5 rounded bg-violet-500/[0.04] border border-violet-500/[0.06]">private</span>
+          <span className="text-[11px] font-mono text-zinc-400 px-2 py-0.5 rounded bg-white/[0.03] border border-white/[0.04]">quantum-safe</span>
+          <span className="text-zinc-500 text-[11px]">+</span>
+          <span className="text-[11px] font-mono text-violet-400/80 px-2 py-0.5 rounded bg-violet-500/[0.04] border border-violet-500/[0.06]">private</span>
         </div>
 
         {umbraRegistered ? (
-          <div className="flex items-center gap-2 text-[11px] text-[#00e5a0]/70">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 6L9 17l-5-5" /></svg>
-            Active. Toggle &quot;Private send&quot; in Send modal.
+          <div className="flex items-center gap-2 text-[13px] text-[#00e5a0]/80">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 6L9 17l-5-5" /></svg>
+            Active &mdash; toggle &quot;Private send&quot; when sending.
           </div>
         ) : umbraRegistering ? (
-          <div className="flex items-center justify-center gap-2 py-2.5 text-[13px] text-zinc-500">
+          <div className="flex items-center justify-center gap-2 py-2.5 text-[13px] text-zinc-400">
             <span className="w-3.5 h-3.5 border-2 border-zinc-700 border-t-violet-400 rounded-full animate-spin" /> Registering...
           </div>
         ) : umbraError ? (
           <div>
-            <p className="text-[11px] text-red-400/60 mb-1">{umbraError}</p>
-            <button onClick={handleUmbraRegister} className="text-[11px] text-zinc-500 hover:text-zinc-300 transition">Retry &rarr;</button>
+            <p className="text-[12px] text-red-400/70 mb-1.5">{umbraError}</p>
+            <button onClick={handleUmbraRegister} className="text-[12px] text-zinc-400 hover:text-zinc-200 transition">Retry &rarr;</button>
           </div>
         ) : (
           <motion.button onClick={handleUmbraRegister} whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }}
@@ -109,40 +109,40 @@ export function PrivacyPanel() {
       <div className="card-cyan p-5">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-cyan-500/[0.06] flex items-center justify-center">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0ea5e9" strokeWidth="2" strokeLinecap="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" /></svg>
+            <div className="w-10 h-10 rounded-xl bg-cyan-500/[0.06] border border-cyan-500/[0.10] flex items-center justify-center">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0ea5e9" strokeWidth="2" strokeLinecap="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" /></svg>
             </div>
             <div>
-              <p className="text-[13px] font-medium text-white">MagicBlock Rollups</p>
-              <p className="text-[10px] text-zinc-500">Ephemeral execution for fast key rotation</p>
+              <p className="text-[14px] font-medium text-white">MagicBlock Rollups</p>
+              <p className="text-[12px] text-zinc-400">Faster key rotation for your vault</p>
             </div>
           </div>
           <StatusPill active={magicblockEnabled} />
         </div>
 
-        <p className="text-[11px] text-zinc-500 leading-relaxed mb-4">
-          Routes vault transactions through MagicBlock&apos;s ephemeral environment. ~10-50ms vs ~400ms on base Solana.
+        <p className="text-[13px] text-zinc-400 leading-relaxed mb-4">
+          Routes vault operations through a fast execution layer. Key rotation drops from ~400ms to 10&ndash;50ms &mdash; transactions feel instant.
         </p>
 
         <div className="flex items-center gap-2 mb-4">
-          <span className="text-[10px] font-mono text-cyan-400/70 px-1.5 py-0.5 rounded bg-cyan-500/[0.04] border border-cyan-500/[0.06]">10-50ms</span>
-          <span className="text-zinc-500 text-[10px]">vs</span>
-          <span className="text-[10px] font-mono text-zinc-500 px-1.5 py-0.5 rounded bg-white/[0.03] border border-white/[0.04] line-through">~400ms</span>
+          <span className="text-[11px] font-mono text-cyan-400/80 px-2 py-0.5 rounded bg-cyan-500/[0.04] border border-cyan-500/[0.06]">10-50ms</span>
+          <span className="text-zinc-400 text-[11px]">vs</span>
+          <span className="text-[11px] font-mono text-zinc-500 px-2 py-0.5 rounded bg-white/[0.03] border border-white/[0.04] line-through">~400ms</span>
         </div>
 
         {magicblockEnabled ? (
-          <div className="flex items-center gap-2 text-[11px] text-[#00e5a0]/70">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 6L9 17l-5-5" /></svg>
-            Connected. Vault ops route through rollup when possible.
+          <div className="flex items-center gap-2 text-[13px] text-[#00e5a0]/80">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 6L9 17l-5-5" /></svg>
+            Connected &mdash; vault operations use the fast lane.
           </div>
         ) : magicblockChecking ? (
-          <div className="flex items-center justify-center gap-2 py-2.5 text-[13px] text-zinc-500">
+          <div className="flex items-center justify-center gap-2 py-2.5 text-[13px] text-zinc-400">
             <span className="w-3.5 h-3.5 border-2 border-zinc-700 border-t-cyan-400 rounded-full animate-spin" /> Checking...
           </div>
         ) : magicblockError ? (
           <div>
-            <p className="text-[11px] text-red-400/60 mb-1">{magicblockError}</p>
-            <button onClick={() => { setMagicblockError(null); checkMagicBlock(); }} className="text-[11px] text-zinc-500 hover:text-zinc-300 transition">Retry &rarr;</button>
+            <p className="text-[12px] text-red-400/70 mb-1.5">{magicblockError}</p>
+            <button onClick={() => { setMagicblockError(null); checkMagicBlock(); }} className="text-[12px] text-zinc-400 hover:text-zinc-200 transition">Retry &rarr;</button>
           </div>
         ) : (
           <motion.button onClick={checkMagicBlock} whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }}
