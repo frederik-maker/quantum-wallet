@@ -4,7 +4,7 @@
 
 A quantum-safe Solana wallet that controls assets on any chain, using Ika for cross-chain signing and W-OTS for post-quantum authorization.
 
-> Built for the [Colosseum Frontier Hackathon](https://www.colosseum.org/) (April-May 2026)
+> **[Live Demo](https://app-kohl-eta-21.vercel.app)** | Built for the [Colosseum Frontier Hackathon](https://www.colosseum.org/) (April-May 2026)
 > Tracks: [Encrypt & Ika](https://earn.superteam.fun/) | [MagicBlock Privacy](https://earn.superteam.fun/) | [Umbra SDK](https://earn.superteam.fun/)
 
 ---
