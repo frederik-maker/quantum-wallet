@@ -133,7 +133,7 @@ export function CrossChainPanel() {
               )}
             </motion.button>
             <p className="text-[11px] text-zinc-500 leading-relaxed">
-              This is a devnet demo &mdash; addresses are simulated. In production, Ika&apos;s network generates real keys via distributed key generation.
+              Ika&apos;s dWallet SDK is pre-launch &mdash; the on-chain CPI is real, but dWallet creation requires their gRPC API which isn&apos;t publicly available yet. Addresses shown here are simulated.
             </p>
           </div>
         ) : (
@@ -168,7 +168,7 @@ export function CrossChainPanel() {
             </div>
 
             <p className="text-[11px] text-zinc-500 leading-relaxed">
-              Demo mode &mdash; addresses are simulated. In production, Ika generates real multi-chain keys via distributed key generation, and balances/transactions are live.
+              Ika&apos;s dWallet SDK is pre-launch &mdash; the on-chain CPI is real, but dWallet creation requires their gRPC API which isn&apos;t publicly available yet. Addresses here are simulated.
             </p>
           </div>
         )}
