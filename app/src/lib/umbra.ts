@@ -9,47 +9,32 @@
  */
 
 /**
- * Workaround for Umbra's strict on-chain timestamp check.
+ * Umbra's deposit program throws AnchorError 14017 "TimestampInFuture" when
+ * the `tvk_timestamp` in the instruction is ahead of the block's
+ * `Clock::unix_timestamp`. Cluster clock ALWAYS lags wall time — block time
+ * is stamped at slot production, so on mainnet it's routinely 0.5-3s behind,
+ * on devnet sometimes 10-30s. Umbra's SDK defaults to stamping from
+ * `new Date()` (wall time) and the check is strict, so it fails constantly.
  *
- * The deposit program throws AnchorError 14017 "TimestampInFuture" when the
- * `tvk_timestamp` it receives (stamped client-side in the SDK) is ahead of
- * the block's `Clock::unix_timestamp`. Cluster clock ALWAYS lags wall time —
- * block time is set at slot production, so even on mainnet it's routinely
- * 0.5–3s behind real time. Devnet is worse.
- *
- * The Umbra SDK stamps with `new Date()` (see `executionTimestamp` in
- * @umbra-privacy/sdk), not `Date.now()`, so we patch the global Date
- * CONSTRUCTOR (and Date.now, for good measure) to return past values for
- * the duration of the SDK call, then restore. The offset is large enough
- * to clear typical cluster lag but well under blockhash validity (~60s)
- * so SDK-internal TTL logic still works.
+ * Fortunately the SDK exposes `deps.random.getUtcNow` exactly for this —
+ * when provided, it replaces `new Date()` inside the SDK. Return past time
+ * components and the on-chain check passes comfortably.
  */
-async function withPastClock<T>(fn: () => Promise<T>, bufferSeconds = 20): Promise<T> {
-  const RealDate = Date;
-  const realNow = Date.now.bind(Date);
-  const LAG_MS = bufferSeconds * 1000;
-
-  // Subclass that shifts zero-arg `new Date()` backwards; other forms pass through.
-  class PatchedDate extends RealDate {
-    constructor(...args: ConstructorParameters<typeof Date> | []) {
-      if (args.length === 0) {
-        super(realNow() - LAG_MS);
-      } else {
-        super(...args);
-      }
-    }
-    static now() {
-      return realNow() - LAG_MS;
-    }
-  }
-
-  globalThis.Date = PatchedDate as unknown as DateConstructor;
-  try {
-    return await fn();
-  } finally {
-    globalThis.Date = RealDate;
-  }
+const UMBRA_CLOCK_LAG_BUFFER_SECONDS = 30;
+function pastUtcComponents() {
+  const d = new Date(Date.now() - UMBRA_CLOCK_LAG_BUFFER_SECONDS * 1000);
+  return {
+    year: BigInt(d.getUTCFullYear()),
+    month: BigInt(d.getUTCMonth() + 1),
+    day: BigInt(d.getUTCDate()),
+    hour: BigInt(d.getUTCHours()),
+    minute: BigInt(d.getUTCMinutes()),
+    second: BigInt(d.getUTCSeconds()),
+  };
 }
+const pastClockDeps = {
+  random: { getUtcNow: pastUtcComponents },
+};
 
 // Umbra program IDs (for reference)
 export const UMBRA_PROGRAM_ID_MAINNET = "UMBRAD2ishebJTcgCLkTkNUx1v3GyoAgpTRPeWoLykh";
@@ -124,8 +109,11 @@ export async function registerUmbraUser(config: UmbraConfig) {
   const client = await createUmbraClient(config);
   const assetProvider = await getProxiedZkAssetProvider();
   const zkProver = getUserRegistrationProver({ assetProvider });
-  const register = getUserRegistrationFunction({ client }, { zkProver });
-  const sigs = await withPastClock(() => register({ confidential: true, anonymous: true }));
+  const register = getUserRegistrationFunction(
+    { client },
+    { zkProver, ...pastClockDeps } as Parameters<typeof getUserRegistrationFunction>[1]
+  );
+  const sigs = await register({ confidential: true, anonymous: true });
   return sigs;
 }
 
@@ -143,15 +131,16 @@ export async function depositToEncrypted(
 
   const client = await createUmbraClient(config);
   const signer = await createSigner(config.feePayerSecret);
-  const deposit = getPublicBalanceToEncryptedBalanceDirectDepositorFunction({
-    client,
-  });
+  const deposit = getPublicBalanceToEncryptedBalanceDirectDepositorFunction(
+    { client },
+    pastClockDeps as Parameters<typeof getPublicBalanceToEncryptedBalanceDirectDepositorFunction>[1]
+  );
 
-  const result = await withPastClock(() => deposit(
+  const result = await deposit(
     signer.address,
     WSOL_MINT as unknown as Parameters<typeof deposit>[1],
     amount as unknown as Parameters<typeof deposit>[2]
-  ));
+  );
 
   return result;
 }
@@ -212,14 +201,14 @@ export async function sendPrivateTransfer(
 
   const createUtxo = getPublicBalanceToReceiverClaimableUtxoCreatorFunction(
     { client },
-    { zkProver }
+    { zkProver, ...pastClockDeps } as Parameters<typeof getPublicBalanceToReceiverClaimableUtxoCreatorFunction>[1]
   );
 
-  const sigs = await withPastClock(() => createUtxo({
+  const sigs = await createUtxo({
     destinationAddress: recipient as unknown as Parameters<typeof createUtxo>[0]["destinationAddress"],
     mint: WSOL_MINT as unknown as Parameters<typeof createUtxo>[0]["mint"],
     amount: amount as unknown as Parameters<typeof createUtxo>[0]["amount"],
-  }));
+  });
 
   return sigs;
 }
