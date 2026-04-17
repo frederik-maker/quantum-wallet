@@ -12,23 +12,45 @@
  * Workaround for Umbra's strict on-chain timestamp check.
  *
  * The deposit program throws AnchorError 14017 "TimestampInFuture" when the
- * deposit's `created_at` (stamped client-side from Date.now()) is ahead of
- * the block's `Clock::unix_timestamp`. The catch is that cluster clock ALWAYS
- * lags wall time — the block time is set when the slot is produced, so even
- * on mainnet it's routinely 0.5–3s behind real time. Devnet is worse.
+ * `tvk_timestamp` it receives (stamped client-side in the SDK) is ahead of
+ * the block's `Clock::unix_timestamp`. Cluster clock ALWAYS lags wall time —
+ * block time is set at slot production, so even on mainnet it's routinely
+ * 0.5–3s behind real time. Devnet is worse.
  *
- * The SDK doesn't expose a timestamp override, so we shim Date.now() during
- * the SDK call to return a past value. 10 seconds is far enough to clear
- * normal cluster lag but close enough to real time that any SDK-internal
- * freshness/TTL logic still works (blockhash validity is ~60s).
+ * The Umbra SDK stamps with `new Date()` (see `executionTimestamp` in
+ * @umbra-privacy/sdk), not `Date.now()`, so we patch the global Date
+ * CONSTRUCTOR (and Date.now, for good measure) to return past values for
+ * the duration of the SDK call, then restore. The offset is large enough
+ * to clear typical cluster lag but well under blockhash validity (~60s)
+ * so SDK-internal TTL logic still works.
  */
-async function withPastClock<T>(fn: () => Promise<T>, bufferSeconds = 10): Promise<T> {
+async function withPastClock<T>(fn: () => Promise<T>, bufferSeconds = 20): Promise<T> {
+  const RealDate = Date;
   const realNow = Date.now.bind(Date);
-  Date.now = () => realNow() - bufferSeconds * 1000;
+  const LAG_MS = bufferSeconds * 1000;
+
+  // Subclass that shifts zero-arg `new Date()` backwards; other forms pass through.
+  class PatchedDate extends RealDate {
+    constructor(...args: ConstructorParameters<typeof Date> | []) {
+      if (args.length === 0) {
+        super(realNow() - LAG_MS);
+      } else {
+        // @ts-expect-error — variadic forwarding to real Date
+        super(...args);
+      }
+    }
+    static now() {
+      return realNow() - LAG_MS;
+    }
+  }
+
+  // @ts-expect-error — replacing global Date for the duration of fn()
+  globalThis.Date = PatchedDate;
   try {
     return await fn();
   } finally {
-    Date.now = realNow;
+    // @ts-expect-error
+    globalThis.Date = RealDate;
   }
 }
 
