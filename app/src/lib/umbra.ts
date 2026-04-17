@@ -20,9 +20,10 @@
  * when provided, it replaces `new Date()` inside the SDK. Return past time
  * components and the on-chain check passes comfortably.
  */
-const UMBRA_CLOCK_LAG_BUFFER_SECONDS = 30;
+const UMBRA_CLOCK_LAG_BUFFER_SECONDS = 45;
 function pastUtcComponents() {
   const d = new Date(Date.now() - UMBRA_CLOCK_LAG_BUFFER_SECONDS * 1000);
+  console.log("[umbra] past-clock getUtcNow →", d.toISOString());
   return {
     year: BigInt(d.getUTCFullYear()),
     month: BigInt(d.getUTCMonth() + 1),
@@ -35,6 +36,38 @@ function pastUtcComponents() {
 const pastClockDeps = {
   random: { getUtcNow: pastUtcComponents },
 };
+
+/**
+ * Belt-and-suspenders: in addition to deps.random.getUtcNow (preferred path),
+ * also replace the global Date constructor for the duration of an SDK call.
+ * Any `new Date()` inside the SDK that bypasses the getUtcNow hook will still
+ * get shifted to past time.
+ */
+async function withPatchedDate<T>(fn: () => Promise<T>): Promise<T> {
+  const RealDate = globalThis.Date;
+  const realNow = RealDate.now.bind(RealDate);
+  const LAG_MS = UMBRA_CLOCK_LAG_BUFFER_SECONDS * 1000;
+
+  class PatchedDate extends RealDate {
+    constructor(...args: ConstructorParameters<typeof Date> | []) {
+      if (args.length === 0) {
+        super(realNow() - LAG_MS);
+      } else {
+        super(...args);
+      }
+    }
+    static now() {
+      return realNow() - LAG_MS;
+    }
+  }
+
+  globalThis.Date = PatchedDate as unknown as DateConstructor;
+  try {
+    return await fn();
+  } finally {
+    globalThis.Date = RealDate;
+  }
+}
 
 // Umbra program IDs (for reference)
 export const UMBRA_PROGRAM_ID_MAINNET = "UMBRAD2ishebJTcgCLkTkNUx1v3GyoAgpTRPeWoLykh";
@@ -113,7 +146,7 @@ export async function registerUmbraUser(config: UmbraConfig) {
     { client },
     { zkProver, ...pastClockDeps } as Parameters<typeof getUserRegistrationFunction>[1]
   );
-  const sigs = await register({ confidential: true, anonymous: true });
+  const sigs = await withPatchedDate(() => register({ confidential: true, anonymous: true }));
   return sigs;
 }
 
@@ -136,11 +169,11 @@ export async function depositToEncrypted(
     pastClockDeps as Parameters<typeof getPublicBalanceToEncryptedBalanceDirectDepositorFunction>[1]
   );
 
-  const result = await deposit(
+  const result = await withPatchedDate(() => deposit(
     signer.address,
     WSOL_MINT as unknown as Parameters<typeof deposit>[1],
     amount as unknown as Parameters<typeof deposit>[2]
-  );
+  ));
 
   return result;
 }
@@ -204,11 +237,11 @@ export async function sendPrivateTransfer(
     { zkProver, ...pastClockDeps } as Parameters<typeof getPublicBalanceToReceiverClaimableUtxoCreatorFunction>[1]
   );
 
-  const sigs = await createUtxo({
+  const sigs = await withPatchedDate(() => createUtxo({
     destinationAddress: recipient as unknown as Parameters<typeof createUtxo>[0]["destinationAddress"],
     mint: WSOL_MINT as unknown as Parameters<typeof createUtxo>[0]["mint"],
     amount: amount as unknown as Parameters<typeof createUtxo>[0]["amount"],
-  });
+  }));
 
   return sigs;
 }
