@@ -35,7 +35,6 @@ async function withPastClock<T>(fn: () => Promise<T>, bufferSeconds = 20): Promi
       if (args.length === 0) {
         super(realNow() - LAG_MS);
       } else {
-        // @ts-expect-error — variadic forwarding to real Date
         super(...args);
       }
     }
@@ -44,12 +43,10 @@ async function withPastClock<T>(fn: () => Promise<T>, bufferSeconds = 20): Promi
     }
   }
 
-  // @ts-expect-error — replacing global Date for the duration of fn()
-  globalThis.Date = PatchedDate;
+  globalThis.Date = PatchedDate as unknown as DateConstructor;
   try {
     return await fn();
   } finally {
-    // @ts-expect-error
     globalThis.Date = RealDate;
   }
 }
