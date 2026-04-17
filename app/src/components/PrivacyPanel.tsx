@@ -24,8 +24,20 @@ export function PrivacyPanel() {
       setUmbraRegistered(true);
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Registration failed";
-      if (msg.toLowerCase().includes("simulation")) {
+      const lower = msg.toLowerCase();
+      // Blockhash expired (`__code=1` with currentBlockHeight > lastValidBlockHeight) —
+      // the proof + tx build took longer than a blockhash's ~60s validity window.
+      // Retrying almost always fixes it because the SDK grabs a fresh blockhash on the next attempt.
+      if (
+        lower.includes("blockhash") ||
+        lower.includes("blockheightexceeded") ||
+        (lower.includes("__code=1") && lower.includes("lastvalidblockheight"))
+      ) {
+        setUmbraError("Blockhash expired before the tx landed — ZK proof generation took too long. Click retry, it usually works second time.");
+      } else if (lower.includes("simulation")) {
         setUmbraError("Transaction failed — your wallet may need SOL for fees.");
+      } else if (lower.includes("429") || lower.includes("too many")) {
+        setUmbraError("RPC rate limited. Wait a few seconds and retry.");
       } else {
         setUmbraError(msg);
       }
