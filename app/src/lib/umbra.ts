@@ -8,6 +8,30 @@
  * Uses @umbra-privacy/sdk v4 with @solana/kit signer interface.
  */
 
+/**
+ * Workaround for Umbra's strict on-chain timestamp check.
+ *
+ * The deposit program throws AnchorError 14017 "TimestampInFuture" when the
+ * deposit's `created_at` (stamped client-side from Date.now()) is ahead of
+ * the block's `Clock::unix_timestamp`. The catch is that cluster clock ALWAYS
+ * lags wall time — the block time is set when the slot is produced, so even
+ * on mainnet it's routinely 0.5–3s behind real time. Devnet is worse.
+ *
+ * The SDK doesn't expose a timestamp override, so we shim Date.now() during
+ * the SDK call to return a past value. 10 seconds is far enough to clear
+ * normal cluster lag but close enough to real time that any SDK-internal
+ * freshness/TTL logic still works (blockhash validity is ~60s).
+ */
+async function withPastClock<T>(fn: () => Promise<T>, bufferSeconds = 10): Promise<T> {
+  const realNow = Date.now.bind(Date);
+  Date.now = () => realNow() - bufferSeconds * 1000;
+  try {
+    return await fn();
+  } finally {
+    Date.now = realNow;
+  }
+}
+
 // Umbra program IDs (for reference)
 export const UMBRA_PROGRAM_ID_MAINNET = "UMBRAD2ishebJTcgCLkTkNUx1v3GyoAgpTRPeWoLykh";
 export const UMBRA_PROGRAM_ID_DEVNET = "DSuKkyqGVGgo4QtPABfxKJKygUDACbUhirnuv63mEpAJ";
@@ -82,7 +106,7 @@ export async function registerUmbraUser(config: UmbraConfig) {
   const assetProvider = await getProxiedZkAssetProvider();
   const zkProver = getUserRegistrationProver({ assetProvider });
   const register = getUserRegistrationFunction({ client }, { zkProver });
-  const sigs = await register({ confidential: true, anonymous: true });
+  const sigs = await withPastClock(() => register({ confidential: true, anonymous: true }));
   return sigs;
 }
 
@@ -104,11 +128,11 @@ export async function depositToEncrypted(
     client,
   });
 
-  const result = await deposit(
+  const result = await withPastClock(() => deposit(
     signer.address,
     WSOL_MINT as unknown as Parameters<typeof deposit>[1],
     amount as unknown as Parameters<typeof deposit>[2]
-  );
+  ));
 
   return result;
 }
@@ -172,11 +196,11 @@ export async function sendPrivateTransfer(
     { zkProver }
   );
 
-  const sigs = await createUtxo({
+  const sigs = await withPastClock(() => createUtxo({
     destinationAddress: recipient as unknown as Parameters<typeof createUtxo>[0]["destinationAddress"],
     mint: WSOL_MINT as unknown as Parameters<typeof createUtxo>[0]["mint"],
     amount: amount as unknown as Parameters<typeof createUtxo>[0]["amount"],
-  });
+  }));
 
   return sigs;
 }
