@@ -242,13 +242,15 @@ export async function sendPrivateTransfer(
     { zkProver, ...pastClockDeps } as Parameters<typeof getPublicBalanceToReceiverClaimableUtxoCreatorFunction>[1]
   );
 
-  const sigs = await withPatchedDate(() => createUtxo({
+  const result = await withPatchedDate(() => createUtxo({
     destinationAddress: recipient as unknown as Parameters<typeof createUtxo>[0]["destinationAddress"],
     mint: WSOL_MINT as unknown as Parameters<typeof createUtxo>[0]["mint"],
     amount: amount as unknown as Parameters<typeof createUtxo>[0]["amount"],
   }));
 
-  return sigs;
+  // The SDK returns { createProofAccountSignature, createUtxoSignature, ... }.
+  // createUtxoSignature is the deposit tx the user will want to see on the explorer.
+  return result;
 }
 
 /**
@@ -265,7 +267,12 @@ export async function scanForTransfers(config: UmbraConfig, treeIndex = 0) {
   const client = await createUmbraClient(config);
   const scan = getClaimableUtxoScannerFunction({ client });
 
-  const result = await scan(treeIndex as unknown as Parameters<typeof scan>[0], 0 as unknown as Parameters<typeof scan>[1]);
+  // Scanner args are U32 — branded bigints. Passing plain numbers makes the SDK
+  // throw "Cannot mix BigInt and other types" when it compares scan indices.
+  const result = await scan(
+    BigInt(treeIndex) as unknown as Parameters<typeof scan>[0],
+    BigInt(0) as unknown as Parameters<typeof scan>[1],
+  );
   return {
     received: result.received,
     publicReceived: result.publicReceived,
@@ -299,6 +306,39 @@ export async function claimReceivedUtxos(
   const claim = getReceiverClaimableUtxoToEncryptedBalanceClaimerFunction(
     { client },
     { zkProver, relayer, ...pastClockDeps } as unknown as Parameters<typeof getReceiverClaimableUtxoToEncryptedBalanceClaimerFunction>[1]
+  );
+
+  const result = await withPatchedDate(() =>
+    claim(utxos as Parameters<typeof claim>[0])
+  );
+  return { claimed: utxos.length, result };
+}
+
+/**
+ * Claim self-deposited UTXOs (from public or encrypted balance back into
+ * encrypted balance). Used when the user sent to their own address — Umbra's
+ * scanner puts those UTXOs in the selfBurnable buckets, which need a
+ * different claimer than UTXOs from other senders.
+ */
+export async function claimSelfUtxos(
+  config: UmbraConfig,
+  utxos: readonly unknown[]
+) {
+  if (utxos.length === 0) return { claimed: 0 };
+
+  const { getSelfClaimableUtxoToEncryptedBalanceClaimerFunction, getUmbraRelayer } = await import("@umbra-privacy/sdk");
+  const { getClaimSelfClaimableUtxoIntoEncryptedBalanceProver } = await import("@umbra-privacy/web-zk-prover");
+
+  const client = await createUmbraClient(config);
+  const assetProvider = await getProxiedZkAssetProvider();
+  const zkProver = getClaimSelfClaimableUtxoIntoEncryptedBalanceProver({ assetProvider });
+  const relayer = getUmbraRelayer({
+    apiEndpoint: config.network === "mainnet" ? RELAYER_MAINNET : RELAYER_DEVNET,
+  });
+
+  const claim = getSelfClaimableUtxoToEncryptedBalanceClaimerFunction(
+    { client },
+    { zkProver, relayer, ...pastClockDeps } as unknown as Parameters<typeof getSelfClaimableUtxoToEncryptedBalanceClaimerFunction>[1]
   );
 
   const result = await withPatchedDate(() =>

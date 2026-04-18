@@ -35,7 +35,7 @@ export function SendModal({ onClose }: SendModalProps) {
         if (!feePayerSecret) throw new Error("Wallet not initialized");
         const { sendPrivateTransfer } = await import("@/lib/umbra");
 
-        const sigs = await sendPrivateTransfer(
+        const result = await sendPrivateTransfer(
           {
             network: network === "mainnet-beta" ? "mainnet" : "devnet",
             rpcUrl,
@@ -44,7 +44,13 @@ export function SendModal({ onClose }: SendModalProps) {
           recipient,
           BigInt(lamports)
         );
-        const sig = Array.isArray(sigs) ? sigs[0] : String(sigs);
+        // SDK returns { createProofAccountSignature, createUtxoSignature, closeProofAccountSignature? }.
+        // The deposit tx is createUtxoSignature — that's the one worth linking on the explorer.
+        const sig = String(
+          (result as { createUtxoSignature?: string; createProofAccountSignature?: string })?.createUtxoSignature
+            ?? (result as { createProofAccountSignature?: string })?.createProofAccountSignature
+            ?? ""
+        );
         setTxSig(sig);
         // Record the private send in activity — the Umbra path bypasses sendSol,
         // which is where regular sends get logged.
@@ -56,7 +62,7 @@ export function SendModal({ onClose }: SendModalProps) {
               type: "send" as const,
               amount: lamports,
               counterparty: recipient,
-              signature: sig,
+              signature: sig || undefined,
               timestamp: Date.now(),
               status: "confirmed" as const,
             },

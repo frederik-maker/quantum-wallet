@@ -48,6 +48,10 @@ export function PrivacyPanel() {
     else setEncryptedLamports(null);
   }, [umbraRegistered, network, refreshEncryptedBalance]);
 
+  // Keep receiver and self UTXOs separate so we can route each to its own claimer.
+  const [pendingReceiver, setPendingReceiver] = useState<readonly unknown[]>([]);
+  const [pendingSelf, setPendingSelf] = useState<readonly unknown[]>([]);
+
   const handleScan = async () => {
     setScanning(true);
     setScanError(null);
@@ -59,10 +63,13 @@ export function PrivacyPanel() {
         rpcUrl,
         feePayerSecret: feePayerSecret!,
       });
-      // Both public and encrypted receiver UTXOs use the same claimer.
-      const incoming = [...res.publicReceived, ...res.received];
-      setPending(incoming);
-      if (incoming.length === 0) {
+      const receiver = [...res.publicReceived, ...res.received];
+      const self = [...res.publicSelfBurnable, ...res.selfBurnable];
+      setPendingReceiver(receiver);
+      setPendingSelf(self);
+      const total = receiver.length + self.length;
+      setPending(total > 0 ? new Array(total) : []);
+      if (total === 0) {
         setClaimStatus("No pending private transfers.");
       }
     } catch (err) {
@@ -73,20 +80,27 @@ export function PrivacyPanel() {
   };
 
   const handleClaim = async () => {
-    if (!pending || pending.length === 0) return;
+    const total = pendingReceiver.length + pendingSelf.length;
+    if (total === 0) return;
     setClaiming(true);
     setScanError(null);
     try {
-      const { claimReceivedUtxos } = await import("@/lib/umbra");
-      const res = await claimReceivedUtxos(
-        {
-          network: network === "mainnet-beta" ? "mainnet" : "devnet",
-          rpcUrl,
-          feePayerSecret: feePayerSecret!,
-        },
-        pending
-      );
-      setClaimStatus(`Claimed ${res.claimed} private transfer${res.claimed !== 1 ? "s" : ""}.`);
+      const { claimReceivedUtxos, claimSelfUtxos } = await import("@/lib/umbra");
+      const cfg = {
+        network: (network === "mainnet-beta" ? "mainnet" : "devnet") as "mainnet" | "devnet",
+        rpcUrl,
+        feePayerSecret: feePayerSecret!,
+      };
+      let claimed = 0;
+      if (pendingReceiver.length > 0) {
+        const r = await claimReceivedUtxos(cfg, pendingReceiver);
+        claimed += r.claimed;
+      }
+      if (pendingSelf.length > 0) {
+        const r = await claimSelfUtxos(cfg, pendingSelf);
+        claimed += r.claimed;
+      }
+      setClaimStatus(`Claimed ${claimed} private transfer${claimed !== 1 ? "s" : ""}.`);
       // Log to activity as a receive
       useWalletStore.setState((s) => ({
         history: [
@@ -102,6 +116,8 @@ export function PrivacyPanel() {
         ],
       }));
       setPending([]);
+      setPendingReceiver([]);
+      setPendingSelf([]);
       // Claim lands funds in the encrypted balance — refresh to reflect
       refreshEncryptedBalance();
     } catch (err) {
