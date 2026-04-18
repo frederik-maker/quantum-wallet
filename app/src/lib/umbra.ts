@@ -294,7 +294,7 @@ export async function claimReceivedUtxos(
   config: UmbraConfig,
   utxos: readonly unknown[]
 ) {
-  if (utxos.length === 0) return { claimed: 0, signatures: {} };
+  if (utxos.length === 0) return { claimed: 0, failedBatches: 0, totalBatches: 0, reasons: [] as string[] };
 
   const { getReceiverClaimableUtxoToEncryptedBalanceClaimerFunction, getUmbraRelayer } = await import("@umbra-privacy/sdk");
   const { getClaimReceiverClaimableUtxoIntoEncryptedBalanceProver } = await import("@umbra-privacy/web-zk-prover");
@@ -320,7 +320,36 @@ export async function claimReceivedUtxos(
   const result = await withPatchedDate(() =>
     claim(utxos as Parameters<typeof claim>[0])
   );
-  return { claimed: utxos.length, result };
+  return summarizeClaimResult(result, utxos.length);
+}
+
+/**
+ * Count how many batches actually succeeded vs failed/timed-out, and collect
+ * failure reasons. The SDK processes claims in batches of up to 4 — if one
+ * times out or fails, the others might still succeed.
+ */
+function summarizeClaimResult(
+  result: { batches: Map<unknown, { status: string; failureReason?: string | null }> },
+  attemptedCount: number
+) {
+  let completed = 0;
+  let failed = 0;
+  const reasons: string[] = [];
+  for (const batch of result.batches.values()) {
+    if (batch.status === "completed") completed++;
+    else {
+      failed++;
+      if (batch.failureReason) reasons.push(batch.failureReason);
+    }
+  }
+  // Batches hold up to 4 UTXOs; approximate the per-UTXO counts.
+  const batchSize = Math.ceil(attemptedCount / Math.max(result.batches.size, 1));
+  return {
+    claimed: Math.min(completed * batchSize, attemptedCount),
+    failedBatches: failed,
+    totalBatches: result.batches.size,
+    reasons,
+  };
 }
 
 /**
@@ -333,7 +362,7 @@ export async function claimSelfUtxos(
   config: UmbraConfig,
   utxos: readonly unknown[]
 ) {
-  if (utxos.length === 0) return { claimed: 0 };
+  if (utxos.length === 0) return { claimed: 0, failedBatches: 0, totalBatches: 0, reasons: [] as string[] };
 
   const { getSelfClaimableUtxoToEncryptedBalanceClaimerFunction, getUmbraRelayer } = await import("@umbra-privacy/sdk");
   const { getClaimSelfClaimableUtxoIntoEncryptedBalanceProver } = await import("@umbra-privacy/web-zk-prover");
@@ -356,7 +385,7 @@ export async function claimSelfUtxos(
   const result = await withPatchedDate(() =>
     claim(utxos as Parameters<typeof claim>[0])
   );
-  return { claimed: utxos.length, result };
+  return summarizeClaimResult(result, utxos.length);
 }
 
 /**

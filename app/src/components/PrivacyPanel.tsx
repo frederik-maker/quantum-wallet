@@ -92,15 +92,24 @@ export function PrivacyPanel() {
         feePayerSecret: feePayerSecret!,
       };
       let claimed = 0;
+      let failed = 0;
+      const reasons: string[] = [];
       if (pendingReceiver.length > 0) {
         const r = await claimReceivedUtxos(cfg, pendingReceiver);
         claimed += r.claimed;
+        failed += r.failedBatches;
+        if (r.reasons) reasons.push(...r.reasons);
       }
       if (pendingSelf.length > 0) {
         const r = await claimSelfUtxos(cfg, pendingSelf);
         claimed += r.claimed;
+        failed += r.failedBatches;
+        if (r.reasons) reasons.push(...r.reasons);
       }
-      setClaimStatus(`Claimed ${claimed} private transfer${claimed !== 1 ? "s" : ""}.`);
+      const parts: string[] = [];
+      if (claimed > 0) parts.push(`Claimed ${claimed} private transfer${claimed !== 1 ? "s" : ""}`);
+      if (failed > 0) parts.push(`${failed} batch${failed !== 1 ? "es" : ""} failed${reasons.length ? ` (${reasons[0]})` : ""}`);
+      setClaimStatus(parts.length ? parts.join(" · ") : "Claim submitted");
       // Log to activity as a receive
       useWalletStore.setState((s) => ({
         history: [
@@ -120,6 +129,11 @@ export function PrivacyPanel() {
       setPendingSelf([]);
       // Claim lands funds in the encrypted balance — refresh to reflect
       refreshEncryptedBalance();
+      // Re-scan after a short delay so the UI reflects post-claim indexer state
+      // (otherwise stale scanner data keeps showing the same UTXOs as pending).
+      setTimeout(() => {
+        handleScan();
+      }, 3000);
     } catch (err) {
       setScanError(err instanceof Error ? err.message : "Claim failed");
     } finally {
