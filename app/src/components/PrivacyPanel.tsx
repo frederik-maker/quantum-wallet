@@ -13,6 +13,72 @@ export function PrivacyPanel() {
   const [umbraError, setUmbraError] = useState<string | null>(null);
   const [magicblockChecking, setMagicblockChecking] = useState(false);
   const [magicblockError, setMagicblockError] = useState<string | null>(null);
+  const [scanning, setScanning] = useState(false);
+  const [claiming, setClaiming] = useState(false);
+  const [pending, setPending] = useState<readonly unknown[] | null>(null);
+  const [scanError, setScanError] = useState<string | null>(null);
+  const [claimStatus, setClaimStatus] = useState<string | null>(null);
+
+  const handleScan = async () => {
+    setScanning(true);
+    setScanError(null);
+    setClaimStatus(null);
+    try {
+      const { scanForTransfers } = await import("@/lib/umbra");
+      const res = await scanForTransfers({
+        network: network === "mainnet-beta" ? "mainnet" : "devnet",
+        rpcUrl,
+        feePayerSecret: feePayerSecret!,
+      });
+      // Both public and encrypted receiver UTXOs use the same claimer.
+      const incoming = [...res.publicReceived, ...res.received];
+      setPending(incoming);
+      if (incoming.length === 0) {
+        setClaimStatus("No pending private transfers.");
+      }
+    } catch (err) {
+      setScanError(err instanceof Error ? err.message : "Scan failed");
+    } finally {
+      setScanning(false);
+    }
+  };
+
+  const handleClaim = async () => {
+    if (!pending || pending.length === 0) return;
+    setClaiming(true);
+    setScanError(null);
+    try {
+      const { claimReceivedUtxos } = await import("@/lib/umbra");
+      const res = await claimReceivedUtxos(
+        {
+          network: network === "mainnet-beta" ? "mainnet" : "devnet",
+          rpcUrl,
+          feePayerSecret: feePayerSecret!,
+        },
+        pending
+      );
+      setClaimStatus(`Claimed ${res.claimed} private transfer${res.claimed !== 1 ? "s" : ""}.`);
+      // Log to activity as a receive
+      useWalletStore.setState((s) => ({
+        history: [
+          ...s.history,
+          {
+            id: `umbra-claim-${Date.now()}`,
+            type: "receive" as const,
+            amount: 0,
+            counterparty: "Umbra mixer",
+            timestamp: Date.now(),
+            status: "confirmed" as const,
+          },
+        ],
+      }));
+      setPending([]);
+    } catch (err) {
+      setScanError(err instanceof Error ? err.message : "Claim failed");
+    } finally {
+      setClaiming(false);
+    }
+  };
 
   const handleUmbraRegister = async () => {
     setUmbraRegistering(true);
@@ -118,6 +184,42 @@ export function PrivacyPanel() {
             {umbraError && (
               <p className="text-[12px] text-red-400/70">{umbraError}</p>
             )}
+
+            {/* Incoming private transfers — scan + claim */}
+            <div className="pt-3 mt-3 border-t border-white/[0.04] space-y-2">
+              <p className="text-[12px] text-zinc-400 font-medium">Incoming private transfers</p>
+              <p className="text-[11px] text-zinc-500 leading-relaxed">
+                Private sends land as encrypted UTXOs in Umbra&apos;s mixer pool. Scan to find transfers addressed to you, then claim them into your encrypted balance.
+              </p>
+              <div className="flex items-center gap-2">
+                <motion.button
+                  onClick={handleScan}
+                  disabled={scanning || claiming || !feePayerSecret}
+                  whileHover={!scanning && !claiming ? { scale: 1.01 } : {}}
+                  whileTap={!scanning && !claiming ? { scale: 0.98 } : {}}
+                  className="flex-1 py-2 rounded-lg border border-white/[0.06] bg-white/[0.02] text-[12px] text-zinc-300 hover:bg-white/[0.05] transition disabled:opacity-40"
+                >
+                  {scanning ? "Scanning…" : "Check for incoming"}
+                </motion.button>
+                {pending && pending.length > 0 && (
+                  <motion.button
+                    onClick={handleClaim}
+                    disabled={claiming || scanning}
+                    whileHover={!claiming ? { scale: 1.01 } : {}}
+                    whileTap={!claiming ? { scale: 0.98 } : {}}
+                    className="flex-1 py-2 rounded-lg bg-violet-500/20 border border-violet-500/30 text-[12px] text-violet-200 hover:bg-violet-500/30 transition disabled:opacity-40"
+                  >
+                    {claiming ? "Claiming…" : `Claim ${pending.length}`}
+                  </motion.button>
+                )}
+              </div>
+              {claimStatus && (
+                <p className="text-[12px] text-[#00e5a0]/80">{claimStatus}</p>
+              )}
+              {scanError && (
+                <p className="text-[12px] text-red-400/70">{scanError}</p>
+              )}
+            </div>
           </div>
         ) : umbraRegistering ? (
           <div className="flex items-center justify-center gap-2 py-2.5 text-[13px] text-zinc-400">

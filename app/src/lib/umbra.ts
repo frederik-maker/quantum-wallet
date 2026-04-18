@@ -80,6 +80,11 @@ const WSOL_MINT = "So11111111111111111111111111111111111111112";
 const INDEXER_MAINNET = "https://utxo-indexer.api.umbraprivacy.com";
 const INDEXER_DEVNET = "https://utxo-indexer.api-devnet.umbraprivacy.com";
 
+// Relayer endpoints (claims are submitted through Umbra's relayer, which covers
+// recipient fees so the claim can happen without revealing claimer's identity)
+const RELAYER_MAINNET = "https://relayer.api.umbraprivacy.com";
+const RELAYER_DEVNET = "https://relayer.api-devnet.umbraprivacy.com";
+
 /**
  * Get a ZK asset provider that routes through our Next.js proxy to avoid CORS.
  * The CDN (d3j9fjdkre529f.cloudfront.net) blocks cross-origin requests from localhost.
@@ -247,7 +252,12 @@ export async function sendPrivateTransfer(
 }
 
 /**
- * Scan for incoming private transfers (as recipient).
+ * Scan Umbra's mixer tree for claimable UTXOs addressed to this wallet.
+ * Returns four buckets:
+ *  - received / publicReceived: UTXOs sent TO this wallet by others (or by self via receiver flow)
+ *  - selfBurnable / publicSelfBurnable: UTXOs this wallet created for itself
+ * When the user private-sends to their own address, the deposit lands in `publicReceived`
+ * because we use the receiver-claimable UTXO creator flow.
  */
 export async function scanForTransfers(config: UmbraConfig, treeIndex = 0) {
   const { getClaimableUtxoScannerFunction } = await import("@umbra-privacy/sdk");
@@ -257,11 +267,44 @@ export async function scanForTransfers(config: UmbraConfig, treeIndex = 0) {
 
   const result = await scan(treeIndex as unknown as Parameters<typeof scan>[0], 0 as unknown as Parameters<typeof scan>[1]);
   return {
-    fromOthers: result.received,
-    fromSelf: result.selfBurnable,
-    publicFromOthers: result.publicReceived,
-    publicFromSelf: result.publicSelfBurnable,
+    received: result.received,
+    publicReceived: result.publicReceived,
+    selfBurnable: result.selfBurnable,
+    publicSelfBurnable: result.publicSelfBurnable,
   };
+}
+
+/**
+ * Claim receiver-claimable UTXOs into this wallet's Umbra encrypted balance.
+ * Feeds the scanned UTXOs through the receiver claimer, which generates a ZK proof
+ * unlocking them and submits through Umbra's relayer (so the claim doesn't leak
+ * the recipient's public address as tx fee payer).
+ */
+export async function claimReceivedUtxos(
+  config: UmbraConfig,
+  utxos: readonly unknown[]
+) {
+  if (utxos.length === 0) return { claimed: 0, signatures: {} };
+
+  const { getReceiverClaimableUtxoToEncryptedBalanceClaimerFunction, getUmbraRelayer } = await import("@umbra-privacy/sdk");
+  const { getClaimReceiverClaimableUtxoIntoEncryptedBalanceProver } = await import("@umbra-privacy/web-zk-prover");
+
+  const client = await createUmbraClient(config);
+  const assetProvider = await getProxiedZkAssetProvider();
+  const zkProver = getClaimReceiverClaimableUtxoIntoEncryptedBalanceProver({ assetProvider });
+  const relayer = getUmbraRelayer({
+    apiEndpoint: config.network === "mainnet" ? RELAYER_MAINNET : RELAYER_DEVNET,
+  });
+
+  const claim = getReceiverClaimableUtxoToEncryptedBalanceClaimerFunction(
+    { client },
+    { zkProver, relayer, ...pastClockDeps } as unknown as Parameters<typeof getReceiverClaimableUtxoToEncryptedBalanceClaimerFunction>[1]
+  );
+
+  const result = await withPatchedDate(() =>
+    claim(utxos as Parameters<typeof claim>[0])
+  );
+  return { claimed: utxos.length, result };
 }
 
 /**
