@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { useWalletStore } from "@/lib/wallet-store";
+import { LAMPORTS_PER_SOL } from "@/lib/constants";
 
 export function PrivacyPanel() {
   const { network, rpcUrl, feePayerSecret, umbraRegistered: umbraRegisteredMap, magicblockEnabled: magicblockEnabledMap, setUmbraRegistered, setMagicblockEnabled } = useWalletStore();
@@ -18,6 +19,34 @@ export function PrivacyPanel() {
   const [pending, setPending] = useState<readonly unknown[] | null>(null);
   const [scanError, setScanError] = useState<string | null>(null);
   const [claimStatus, setClaimStatus] = useState<string | null>(null);
+  const [encryptedLamports, setEncryptedLamports] = useState<number | null>(null);
+  const [balanceLoading, setBalanceLoading] = useState(false);
+
+  const refreshEncryptedBalance = useCallback(async () => {
+    if (!feePayerSecret || !umbraRegistered) return;
+    setBalanceLoading(true);
+    try {
+      const { queryEncryptedSolBalance } = await import("@/lib/umbra");
+      const lamports = await queryEncryptedSolBalance({
+        network: network === "mainnet-beta" ? "mainnet" : "devnet",
+        rpcUrl,
+        feePayerSecret,
+      });
+      setEncryptedLamports(lamports);
+    } catch {
+      // silent — encrypted balance is best-effort
+    } finally {
+      setBalanceLoading(false);
+    }
+  // intentionally don't depend on umbraRegistered to avoid spurious calls during login flow
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [feePayerSecret, network, rpcUrl]);
+
+  // Refresh when activating or switching networks
+  useEffect(() => {
+    if (umbraRegistered) refreshEncryptedBalance();
+    else setEncryptedLamports(null);
+  }, [umbraRegistered, network, refreshEncryptedBalance]);
 
   const handleScan = async () => {
     setScanning(true);
@@ -73,6 +102,8 @@ export function PrivacyPanel() {
         ],
       }));
       setPending([]);
+      // Claim lands funds in the encrypted balance — refresh to reflect
+      refreshEncryptedBalance();
     } catch (err) {
       setScanError(err instanceof Error ? err.message : "Claim failed");
     } finally {
@@ -184,6 +215,33 @@ export function PrivacyPanel() {
             {umbraError && (
               <p className="text-[12px] text-red-400/70">{umbraError}</p>
             )}
+
+            {/* Encrypted balance */}
+            <div className="pt-3 mt-3 border-t border-white/[0.04]">
+              <div className="flex items-center justify-between mb-1.5">
+                <p className="text-[12px] text-zinc-400 font-medium">Encrypted balance</p>
+                <button
+                  onClick={refreshEncryptedBalance}
+                  disabled={balanceLoading}
+                  className="text-[11px] text-zinc-500 hover:text-violet-300 transition disabled:opacity-40"
+                  title="Refresh encrypted balance"
+                >
+                  {balanceLoading ? "refreshing…" : "refresh"}
+                </button>
+              </div>
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-[22px] font-light text-white tabular-nums tracking-tight">
+                  {encryptedLamports === null
+                    ? "—"
+                    : (encryptedLamports / LAMPORTS_PER_SOL).toFixed(4)}
+                </span>
+                <span className="text-[12px] text-zinc-500 font-mono">SOL</span>
+                <span className="text-[11px] text-violet-400/60 font-mono ml-1.5 px-1.5 py-0.5 rounded bg-violet-500/[0.06] border border-violet-500/[0.08]">shielded</span>
+              </div>
+              <p className="text-[11px] text-zinc-500 leading-relaxed mt-1.5">
+                Balance held in your Umbra encrypted account — invisible on Solana&apos;s public ledger. Funds land here after you claim incoming transfers.
+              </p>
+            </div>
 
             {/* Incoming private transfers — scan + claim */}
             <div className="pt-3 mt-3 border-t border-white/[0.04] space-y-2">

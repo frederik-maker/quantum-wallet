@@ -308,6 +308,27 @@ export async function claimReceivedUtxos(
 }
 
 /**
+ * Query this wallet's Umbra encrypted balance for SOL (wrapped via WSOL).
+ * Returns lamports as a number, or null if the account isn't initialized yet.
+ */
+export async function queryEncryptedSolBalance(
+  config: UmbraConfig
+): Promise<number | null> {
+  const { getEncryptedBalanceQuerierFunction } = await import("@umbra-privacy/sdk");
+  const client = await createUmbraClient(config);
+  const query = getEncryptedBalanceQuerierFunction({ client });
+  const result = await query([WSOL_MINT as unknown as Parameters<typeof query>[0][number]]);
+  const entry = Array.from(result.values())[0];
+  if (!entry) return null;
+  if (entry.state === "shared") {
+    // U64 lamports — cast through unknown because SDK's U64 type is opaque
+    return Number(entry.balance as unknown as bigint);
+  }
+  // non_existent | uninitialized | mxe — treat as "no claimable balance yet"
+  return null;
+}
+
+/**
  * Check if Umbra is available and the user is registered.
  */
 export async function checkUmbraStatus(
