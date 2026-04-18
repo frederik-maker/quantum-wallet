@@ -306,9 +306,15 @@ export async function claimReceivedUtxos(
     apiEndpoint: relayerUrl(config.network),
   });
 
+  // fetchBatchMerkleProof is required by the claimer — the SDK extracts it via
+  // `deps.fetchBatchMerkleProof` with no fallback. It lives on the client from
+  // the indexer setup, so we plumb it through.
+  const fetchBatchMerkleProof = (client as unknown as { fetchBatchMerkleProof?: unknown }).fetchBatchMerkleProof;
+  if (!fetchBatchMerkleProof) throw new Error("Umbra client has no merkle proof fetcher — indexer config missing");
+
   const claim = getReceiverClaimableUtxoToEncryptedBalanceClaimerFunction(
     { client },
-    { zkProver, relayer, ...pastClockDeps } as unknown as Parameters<typeof getReceiverClaimableUtxoToEncryptedBalanceClaimerFunction>[1]
+    { zkProver, relayer, fetchBatchMerkleProof, ...pastClockDeps } as unknown as Parameters<typeof getReceiverClaimableUtxoToEncryptedBalanceClaimerFunction>[1]
   );
 
   const result = await withPatchedDate(() =>
@@ -339,9 +345,12 @@ export async function claimSelfUtxos(
     apiEndpoint: relayerUrl(config.network),
   });
 
+  const fetchBatchMerkleProof = (client as unknown as { fetchBatchMerkleProof?: unknown }).fetchBatchMerkleProof;
+  if (!fetchBatchMerkleProof) throw new Error("Umbra client has no merkle proof fetcher — indexer config missing");
+
   const claim = getSelfClaimableUtxoToEncryptedBalanceClaimerFunction(
     { client },
-    { zkProver, relayer, ...pastClockDeps } as unknown as Parameters<typeof getSelfClaimableUtxoToEncryptedBalanceClaimerFunction>[1]
+    { zkProver, relayer, fetchBatchMerkleProof, ...pastClockDeps } as unknown as Parameters<typeof getSelfClaimableUtxoToEncryptedBalanceClaimerFunction>[1]
   );
 
   const result = await withPatchedDate(() =>
