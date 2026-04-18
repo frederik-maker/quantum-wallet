@@ -76,14 +76,17 @@ export const UMBRA_PROGRAM_ID_DEVNET = "DSuKkyqGVGgo4QtPABfxKJKygUDACbUhirnuv63m
 // Native SOL wrapped mint
 const WSOL_MINT = "So11111111111111111111111111111111111111112";
 
-// Indexer endpoints
-const INDEXER_MAINNET = "https://utxo-indexer.api.umbraprivacy.com";
-const INDEXER_DEVNET = "https://utxo-indexer.api-devnet.umbraprivacy.com";
-
-// Relayer endpoints (claims are submitted through Umbra's relayer, which covers
-// recipient fees so the claim can happen without revealing claimer's identity)
-const RELAYER_MAINNET = "https://relayer.api.umbraprivacy.com";
-const RELAYER_DEVNET = "https://relayer.api-devnet.umbraprivacy.com";
+// Indexer endpoints — routed through Next.js rewrites in next.config.ts because
+// Umbra's services don't send CORS headers, so direct browser fetch fails.
+function sameOrigin(path: string) {
+  return `${typeof window !== "undefined" ? window.location.origin : ""}${path}`;
+}
+function indexerUrl(network: "mainnet" | "devnet") {
+  return sameOrigin(network === "mainnet" ? "/umbra-indexer-mainnet" : "/umbra-indexer-devnet");
+}
+function relayerUrl(network: "mainnet" | "devnet") {
+  return sameOrigin(network === "mainnet" ? "/umbra-relayer-mainnet" : "/umbra-relayer-devnet");
+}
 
 /**
  * Get a ZK asset provider that routes through our Next.js proxy to avoid CORS.
@@ -130,7 +133,7 @@ export async function createUmbraClient(config: UmbraConfig) {
     rpcUrl: config.rpcUrl,
     rpcSubscriptionsUrl,
     indexerApiEndpoint:
-      config.network === "mainnet" ? INDEXER_MAINNET : INDEXER_DEVNET,
+      indexerUrl(config.network),
   });
 
   return client;
@@ -300,7 +303,7 @@ export async function claimReceivedUtxos(
   const assetProvider = await getProxiedZkAssetProvider();
   const zkProver = getClaimReceiverClaimableUtxoIntoEncryptedBalanceProver({ assetProvider });
   const relayer = getUmbraRelayer({
-    apiEndpoint: config.network === "mainnet" ? RELAYER_MAINNET : RELAYER_DEVNET,
+    apiEndpoint: relayerUrl(config.network),
   });
 
   const claim = getReceiverClaimableUtxoToEncryptedBalanceClaimerFunction(
@@ -333,7 +336,7 @@ export async function claimSelfUtxos(
   const assetProvider = await getProxiedZkAssetProvider();
   const zkProver = getClaimSelfClaimableUtxoIntoEncryptedBalanceProver({ assetProvider });
   const relayer = getUmbraRelayer({
-    apiEndpoint: config.network === "mainnet" ? RELAYER_MAINNET : RELAYER_DEVNET,
+    apiEndpoint: relayerUrl(config.network),
   });
 
   const claim = getSelfClaimableUtxoToEncryptedBalanceClaimerFunction(
