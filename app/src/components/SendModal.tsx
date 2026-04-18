@@ -44,7 +44,25 @@ export function SendModal({ onClose }: SendModalProps) {
           recipient,
           BigInt(lamports)
         );
-        setTxSig(Array.isArray(sigs) ? sigs[0] : String(sigs));
+        const sig = Array.isArray(sigs) ? sigs[0] : String(sigs);
+        setTxSig(sig);
+        // Record the private send in activity — the Umbra path bypasses sendSol,
+        // which is where regular sends get logged.
+        useWalletStore.setState((s) => ({
+          history: [
+            ...s.history,
+            {
+              id: `umbra-send-${Date.now()}`,
+              type: "send" as const,
+              amount: lamports,
+              counterparty: recipient,
+              signature: sig,
+              timestamp: Date.now(),
+              status: "confirmed" as const,
+            },
+          ],
+        }));
+        useWalletStore.getState().refreshBalances();
       } else {
         const sig = await sendSol(recipient, lamports);
         setTxSig(sig);
@@ -84,10 +102,17 @@ export function SendModal({ onClose }: SendModalProps) {
           <p className="text-lg font-semibold text-white mb-1">
             {privateSend ? "Private transfer sent" : "Sent successfully"}
           </p>
-          <p className="text-sm text-zinc-400 mb-5">
-            {privateSend
-              ? "Shielded via Umbra. Recipient can scan and claim."
-              : "Keys rotated to fresh quantum-safe pair."}
+          <p className="text-sm text-zinc-400 mb-5 leading-relaxed">
+            {privateSend ? (
+              <>
+                Encrypted into Umbra&apos;s mixer pool. The recipient has a claimable UTXO waiting —
+                on their end they scan the pool, decrypt the note with their Umbra key,
+                and claim it into their encrypted balance. On chain, no one can see the
+                amount or who it went to.
+              </>
+            ) : (
+              <>Keys rotated to fresh quantum-safe pair.</>
+            )}
           </p>
           <a
             href={`${explorerBase}/tx/${txSig}${clusterParam}`}
