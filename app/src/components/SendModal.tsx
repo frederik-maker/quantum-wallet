@@ -84,6 +84,8 @@ export function SendModal({ onClose }: SendModalProps) {
         friendly = "Your Umbra registration didn't land on this network. Go to Privacy → Re-register, then try again.";
       } else if (lower.includes("timestampinfuture") || lower.includes("timestamp") && lower.includes("future")) {
         friendly = "Devnet cluster clock is lagging — Umbra rejects the tx as too-recent. Switch to mainnet or retry in 30 seconds.";
+      } else if (lower.includes("insufficient lamports") || lower.includes("insufficient funds") || (lower.includes("0x1") && lower.includes("transfer"))) {
+        friendly = "Not enough SOL. Each private transfer needs ~0.01 SOL for the deposit amount plus a few thousand lamports in fees across 3 on-chain txs. Fund the wallet from your Receive address and try again.";
       }
       setError(friendly);
     } finally {
